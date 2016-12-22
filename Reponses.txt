@@ -100,6 +100,12 @@ Reception(message m du noeud j){
 
 }
 
+Compléxité en message : "Pire cas tous les noeuds sont reliés entre eux"
+        ELECTION        = N * (N - 1)   //Chaque envoie un message à ses voisins
+        ACK             = N * (N - 1)   //Pour chaque message ELECTION on attend un ACK
+        LEADER          = 2 * (N - 1)   //Cout d'un broadcast avec ACK
+        Total           = N²        
+        
 **********************
 Question 5
 
