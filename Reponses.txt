@@ -1,0 +1,113 @@
+EXERCICE 1
+
+Question 1
+
+L'article présente un algorithme d'élection de leader dans un réseau dynamique tolérant aux crashes et redémarrage 
+d'un noeud. Il assure qu'à partir d'un temps fini, l'algorithme détermine un unique leader pour chaque partie de notre
+système. De plus, une étude est faite sur les bonnes manières d'implémenter un algorithme répartie.
+
+**********************
+Question 2
+
+On suppose que notre système est un graph non orienté où chaque noeud est mobile dans un plan.
+Chaque noeud est distinct gràce à un identifiant et possède une valeur (niveau de batterie, capacité de calcul, etc...).
+Au cours du temps, noeud peut crasher et plus tard se reconnecter au système.
+Si différents noeuds sont assez proches entre eux, ils peuvent se connecter entre eux via une arête.
+
+Une arête représente un canal de communication bidirectionnel entre les noeuds.
+Les communications sont asynchrones et respectent un ordre causal. L'algorithme se basera sur des canaux de
+communication FIFO. Les auteurs supposent aussi, que chaque noeud possède un buffer de réception ont une taille
+suffisante pour la réception de tous messages. Enfin, pour qu'un message soit délivré, il faut que les noeuds
+concernés par la communication soient connectés durant l'intégralité du transfert du message.
+
+**********************
+Question 3
+
+Chaque élection possède un identifiant <num, id> représentant le numéro de l'élection déclanché le noeud d'identifiant
+id. Les identifiants d'élection respectent un ordre total tel que :
+	<num1, id1> > <num2, id2> = (num1 > num2) v ((num1 = num2)^(id1 > id2))
+
+Lors d'élections concurrentes dans une même composante connexe, un noeud doit toujours participer à l'élection la plus
+prioritaire. Cela implique qu'un noeud peut arrêter une élection en cours, si il reçoit une invitation à une élection
+plus prioritaire que la courante.
+
+**********************
+Question 4
+
+Algorithme de leader election dans un réseau statique.
+
+variables locales:
+	i       : Identifiant du noeud.
+	val     : Valeur du noeud.
+	N[]     : Liste des voisins de i.
+	S[]     : Liste des voisins en attente d'ack.
+	p       : Identifiant du parent
+	lid     : Identifiant du leader.
+	valLid  : Valeur du leader.
+
+initalisation {
+	p       = nil
+	lid     = i
+	valLid   = val
+}
+
+election(){
+        Pour tous les noeuds n dans N[] faire
+                Envoyer message <ELECTION> à n;
+        fin Pour
+        S = N;
+        Tant que S != vide alors
+        	Attendre;
+        Fin Tant que
+
+        broadcast message <LEADER, <lid, valLid>>;
+}
+
+
+Reception(message m du noeud j){
+        Si m == <ELECTION> alors
+                Si p == nil alors 
+		        p = j;
+                        S = N\{p};
+                        Pour tous les noeuds n dans S[] faire
+                                Envoyer message <Election> à n
+                        Fin Pour
+
+                        Tant que S != vide alors
+                                Attendre;
+                        Fin Tant que
+
+                        Envoyer message <ACK, <lid, valLid>>;
+
+                Sinon faire
+                        Envoyer message <ACK, nil>;
+                Fin Si
+
+        Sinon si m == <ACK, info> faire
+                Si info != nil alors
+                        Si info.valLid > valLid alors
+                                lid     = info.lid;
+                                valLid  = info.valLid;
+                        Fin si
+                Fin Si
+
+                S = S\{j};
+
+        Sinon si m == <LEADER, info> faire
+                lid     = info.lid;
+                valLid  = info.valLid;
+        Fin Si
+
+}
+
+**********************
+Question 5
+
+Le mécanisme de tolérance au panne utiliser pour la détection de voisinage ainsi que la liaison avec le leader est le
+"heart beat".
+
+**********************
+Question 6
+
+Le Random WayPoint consiste à ce qu'un noeud reste à une position donnée pendant une durée de temps puis il choisit
+de manière aléatoire une destination et une vitesse. Le processus se répète ainsi de suite.
