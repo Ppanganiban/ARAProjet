@@ -1,5 +1,3 @@
-package projet;
-
 import peersim.edsim.EDProtocol;
 
 public interface PositionProtocol extends EDProtocol {

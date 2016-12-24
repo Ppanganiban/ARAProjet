@@ -1,0 +1,18 @@
+simulation.endtime 10000
+random.seed 5
+
+network.size 5
+
+
+protocol.positionprotocol PositionProtocolImpl
+protocol.positionprotocol.maxX 500
+protocol.positionprotocol.maxY 500
+protocol.positionprotocol.maxSpeed 1
+protocol.positionprotocol.timePause 10
+
+control.monitor Monitor
+control.monitor.from 0
+control.monitor.until 10000
+control.monitor.step 1
+control.monitor.positionprotocol positionprotocol
+control.monitor.time_slow 10

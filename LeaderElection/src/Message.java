@@ -1,5 +1,3 @@
-package projet;
-
 public class Message {
 	private final Object content;
 	private final String tag;

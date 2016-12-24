@@ -1,4 +1,3 @@
-package projet;
 
 import peersim.core.Node;
 import peersim.core.Protocol;
