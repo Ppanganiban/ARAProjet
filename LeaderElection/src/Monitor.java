@@ -9,12 +9,16 @@ import peersim.config.Configuration;
 import peersim.core.Control;
 import peersim.core.Network;
 import peersim.core.Node;
+import peersim.edsim.EDProtocol;
 import peersim.edsim.EDSimulator;
 
 public class Monitor extends JPanel implements Control {
 
 	private static final long serialVersionUID = -4639751772079773440L;
 
+	private static final String PROBE = "PROBE";
+	private static final String ELECTION = "ELECTION";
+	private static final String ACK = "ACK";
 
 	private static final String PAR_POSITIONPID = "positionprotocol";
 	private static final String PAR_ELECTIONPID = "electionprotocol";
@@ -32,12 +36,12 @@ public class Monitor extends JPanel implements Control {
 	private final Dimension dimension_terrain;
 	private  JFrame frame = null;
 	public Monitor(String prefix) {
-		//election_pid = Configuration.getPid(prefix+"."+PAR_ELECTIONPID);
-		election_pid =0;
+		election_pid = Configuration.getPid(prefix+"."+PAR_ELECTIONPID);
+
 		position_pid=Configuration.getPid(prefix+"."+PAR_POSITIONPID);
 		
-		//emitter_pid=Configuration.getPid(prefix+"."+PAR_EMITTER);
-		emitter_pid=0;
+		emitter_pid=Configuration.getPid(prefix+"."+PAR_EMITTER);
+
 		time_slow=Configuration.getDouble(prefix+"."+PAR_TIMESLOW);
 
 		Node n = Network.get(0);
@@ -81,8 +85,8 @@ public class Monitor extends JPanel implements Control {
 		for(int i = 0 ; i< Network.size() ; i++){
 			Node n= Network.get(i);
 			PositionProtocol pos = (PositionProtocol) n.getProtocol(position_pid);
-			//ElectionProtocol elec = (ElectionProtocol) n.getProtocol(election_pid);
-			//Emitter emitter = (Emitter) n.getProtocol(emitter_pid);
+			ElectionProtocol elec = (ElectionProtocol) n.getProtocol(election_pid);
+			Emitter emitter = (Emitter) n.getProtocol(emitter_pid);
 			int size = 10;
 			int center_x=toGraphicX( pos.getX());
 			int center_y=toGraphicY(pos.getY());
@@ -94,35 +98,35 @@ public class Monitor extends JPanel implements Control {
 			
 			g.setColor(Color.CYAN);
 						
-			//int size_scope = toGraphicX(emitter.getScope());
-			//int x_scope=center_x-size_scope;
-			//int y_scope=center_y-size_scope;
-			//g.drawOval(x_scope,y_scope, size_scope*2, size_scope*2);
+			int size_scope = toGraphicX(emitter.getScope());
+			int x_scope=center_x-size_scope;
+			int y_scope=center_y-size_scope;
+			g.drawOval(x_scope,y_scope, size_scope*2, size_scope*2);
 			
 			
 			g.setColor(Color.BLACK);
 			g.drawString("Node"+n.getID(), x_node+size, y_node);
-			//g.drawString("value="+elec.getMyValue(), x_node+size, y_node+10);
-			//g.drawString("Leader="+elec.getIDLeader(), x_node+size, y_node+20);
-						
-			//Long[] neighbors = new Long[elec.getNeighbors().size()];
-			//neighbors=elec.getNeighbors().toArray(neighbors);
+			g.drawString("value="+elec.getMyValue(), x_node+size, y_node+10);
+			g.drawString("Leader="+elec.getIDLeader(), x_node+size, y_node+20);
+	
+			Long[] neighbors = new Long[elec.getNeighbors().size()];
+			neighbors=elec.getNeighbors().toArray(neighbors);
 			
-			/*for(Long id : neighbors){
+			for(Long id : neighbors){
 				Node neighbor = getNodefromId(id);
 				PositionProtocol pos_neigh = (PositionProtocol) neighbor.getProtocol(position_pid);
 				int center_x_neighbor=toGraphicX( pos_neigh.getX());
 				int center_y_neighbor=toGraphicY(pos_neigh.getY());
 				g.drawLine(center_x, center_y, center_x_neighbor, center_y_neighbor);
-			}*/
+			}
 			
-			/*if(elec.isInElection()){
+			if(elec.isInElection()){
 				g.setColor(Color.PINK);
 			}else if(elec.getIDLeader() == n.getID()){
 				g.setColor(Color.red);
 			}else{	
 				g.setColor(Color.GREEN);
-			}*/
+			}
 			g.fillOval(x_node,y_node, size, size);
 		}
 	}
@@ -147,11 +151,19 @@ public class Monitor extends JPanel implements Control {
 		return (int)res;
 	}
 	
-	
+
 	@Override
 	public boolean execute() {
 		if(frame == null){
 			init();
+		}
+
+		for(int i = 0; i < Network.size(); i++){
+			((EDProtocol) Network.get(i).getProtocol(election_pid)).processEvent(Network.get(i), election_pid, null);
+		}
+
+		for(int i = 0; i < Network.size(); i++){
+			((EDProtocol) Network.get(i).getProtocol(position_pid)).processEvent(Network.get(i), position_pid, null);
 		}
 		this.repaint();
 		try {

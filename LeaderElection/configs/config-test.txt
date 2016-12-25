@@ -1,5 +1,5 @@
 simulation.endtime 10000
-random.seed 5
+random.seed 3
 
 network.size 5
 
@@ -8,11 +8,26 @@ protocol.positionprotocol PositionProtocolImpl
 protocol.positionprotocol.maxX 500
 protocol.positionprotocol.maxY 500
 protocol.positionprotocol.maxSpeed 1
-protocol.positionprotocol.timePause 10
+protocol.positionprotocol.timePause 100
+
+protocol.emitter EmitterImpl
+protocol.emitter.scope 100
+protocol.emitter.latency 5
+protocol.emitter.electionprotocol electionprotocol
+protocol.emitter.positionprotocol positionprotocol
+
+protocol.electionprotocol ElectionProtocolImpl
+protocol.electionprotocol.positionprotocol positionprotocol
+protocol.electionprotocol.emitter emitter
+
+
 
 control.monitor Monitor
 control.monitor.from 0
 control.monitor.until 10000
 control.monitor.step 1
 control.monitor.positionprotocol positionprotocol
+control.monitor.emitter emitter
+control.monitor.electionprotocol electionprotocol
+
 control.monitor.time_slow 10

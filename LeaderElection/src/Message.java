@@ -27,7 +27,6 @@ public class Message {
 		this.iddest=iddest;
 		this.idsrc=idsrc;
 		this.pid=pid;
-		
 	}
 		
 }

@@ -1,3 +1,3 @@
-/RandomWayPoint.class
-/PositionProtocolImpl.class
-/PositionProtocolMessage.class
+/EmitterImpl.class
+/ElectionProtocolImpl.class
+/MessageLeaderElection.class
