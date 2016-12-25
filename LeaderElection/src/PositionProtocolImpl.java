@@ -31,7 +31,7 @@ public class PositionProtocolImpl implements PositionProtocol{
 		yDest = Math.random() * maxY;
 
 		currSpeed = (int)(Math.random() * maxSpeed + 1);
-		waitTime = 0;
+		waitTime = timePause;
 		
 	}
 
@@ -47,7 +47,7 @@ public class PositionProtocolImpl implements PositionProtocol{
 			pp.yDest = Math.random() * maxY;
 
 			pp.currSpeed = (int)(Math.random() * maxSpeed + 1);
-			pp.waitTime = 0;
+			pp.waitTime = timePause;
 			
 		}
 		catch( CloneNotSupportedException e ) {} // never happens

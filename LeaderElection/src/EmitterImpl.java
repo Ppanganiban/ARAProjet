@@ -30,10 +30,12 @@ public class EmitterImpl implements Emitter{
 
 	@Override
 	public void emit(Node host, Message msg) {
+		
 		for(int i = 0; i < Network.size(); i++){
 			if (Network.get(i) != host)
 				((EDProtocol) host.getProtocol(election_pid)).processEvent(Network.get(i), election_pid, msg);				
 		}
+
 	}
 
 	public Object clone(){
