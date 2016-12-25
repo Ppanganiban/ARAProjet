@@ -58,42 +58,12 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 
 
 		if(event instanceof Message){
-			boolean canDeliver = false;
-			MessageLeaderElection mess = (MessageLeaderElection) event;
-			Node src = null;
-			for(int i=0;i< Network.size();i++){
-				Node n= Network.get(i);
-				if(n.getID() == mess.getIdSrc()){
-					src = n;
-				}
-			}
-			
-			if(src != null && src != node){
-				PositionProtocolImpl posTmp, posN;
-				int scope;
-				posN = (PositionProtocolImpl) node.getProtocol(position_pid);
-				posTmp = (PositionProtocolImpl) src.getProtocol(position_pid);
-				
-				scope = ((EmitterImpl)node.getProtocol(emitter_pid)).getScope();
+			boolean canDeliver;
+			MessageLeaderElection mess =(MessageLeaderElection) event; 
+			canDeliver = this.canDeliver(node, mess);
 
-				if( posTmp.getX() < posN.getX() + scope
-					&& posTmp.getX() > posN.getX() - scope 
-					&& posTmp.getY() < posN.getY() + scope
-					&& posTmp.getY() > posN.getY() - scope)
-					{
-						canDeliver = true;
-					}
-			}
-							
 			if (canDeliver){
 				if(mess.getTag().equals(PROBE)){
-					
-					PositionProtocolImpl posH = (PositionProtocolImpl) node.getProtocol(position_pid);
-
-					//Find nodes in the range of host 
-					Node tmp;
-					PositionProtocolImpl posTmp;
-
 					ArrayList<Long> listNeighbors = (ArrayList<Long>) ep.getNeighbors();
 					
 					if(!listNeighbors.contains(mess.getIdSrc())){
@@ -110,18 +80,66 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 			    	Integer tmp = entry.getValue() - 1;
 			    	entry.setValue(tmp);
 				    if(entry.getValue() <= 0 ){
-				    	ep.neighbors.remove(entry.getKey());
+				    	Node src = getNodeWithId(entry.getKey());
+				    	removeEdge(node, src);
 				    }
 			    }
 			}
 
-			//Send a Probe msg to all nodes in scope
+			//Sends a Probe msg to all nodes in scope
 			MessageLeaderElection msg = new MessageLeaderElection(node.getID(),Emitter.ALL, PROBE, null, protocol_id);
 			EmitterImpl emitter = (EmitterImpl) node.getProtocol(emitter_pid);
 			emitter.emit(node, msg);
 		}
 	}
+	
+	public boolean canDeliver(Node node, Message m){
+		boolean canDeliver = false;
+		Node src = getNodeWithId(m.getIdSrc());
 
+		if(src != null && src != node){
+			PositionProtocolImpl posTmp, posN;
+			int scope;
+			posN = (PositionProtocolImpl) node.getProtocol(position_pid);
+			posTmp = (PositionProtocolImpl) src.getProtocol(position_pid);
+			
+			scope = ((EmitterImpl)node.getProtocol(emitter_pid)).getScope();
+
+			if( posTmp.getX() < posN.getX() + scope
+				&& posTmp.getX() > posN.getX() - scope 
+				&& posTmp.getY() < posN.getY() + scope
+				&& posTmp.getY() > posN.getY() - scope)
+				{
+					canDeliver = true;
+				}
+		}
+		return canDeliver;
+	}
+	
+	public Node getNodeWithId(Long id){
+		Node result = null;
+		Node n;
+
+		for(int i=0;i< Network.size();i++){
+			n = Network.get(i);
+			if(n.getID() == id){
+				result = n;
+			}
+		}
+		return result;
+	}
+
+	public void removeEdge(Node node1, Node node2){
+		//Remove edge node1 to node2 
+		ElectionProtocolImpl ep = (ElectionProtocolImpl) node1.getProtocol(protocol_id);
+		ep.timerNeighbor.put(node2.getID(), 0);
+		ep.getNeighbors().remove(node2.getID());
+		
+		//Remove edge node2 to node1
+		ep = (ElectionProtocolImpl) node2.getProtocol(protocol_id);
+		ep.timerNeighbor.put(node1.getID(), 0);
+		ep.getNeighbors().remove(node1.getID());
+	}
 	public Object clone(){
 		ElectionProtocolImpl ep = null;
 		try{
