@@ -169,11 +169,11 @@ public class Monitor extends JPanel implements Control {
 			ElectionProtocolImpl ep;
 			Node n;
 
-			for(int i = 0; i < Network.size(); i++){
+			/*for(int i = 0; i < Network.size(); i++){
 				n = Network.get(i);
 				ep = ((ElectionProtocolImpl) n.getProtocol(election_pid));
 				ep.triggerElection(n);
-			}
+			}*/
 		}
 
 		this.repaint();

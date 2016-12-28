@@ -153,7 +153,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 			emitter.emit(node, msg);
 
 			//If we are inElection we look if we have all ack
-			if(ep.inElection && ep.waitedNeighbors.size() == 0){
+			/*if(ep.inElection && ep.waitedNeighbors.size() == 0){
 
 				//If we didnt send yet our ack to our father and we are not the src
 				//We do it
@@ -174,139 +174,109 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 					MessageLeader msglid = new MessageLeader(node.getID(), Emitter.ALL, ep.ackContent, protocol_id);
 					emitter.emit(node, msglid);
 				}
-			}
+			}*/
 		}
 		else if(event instanceof Message){
-			boolean canDeliver;
 			Message mess =(Message) event;
 
 			//Check if we are in range to rcv it
-			canDeliver = this.canDeliver(node, mess);
 
-			if (canDeliver){
-
-				//If we detect a new neighbor
-				if(mess instanceof MessageProbe){
-					ArrayList<Long> listNeighbors = (ArrayList<Long>) ep.getNeighbors();
-					if(!listNeighbors.contains(mess.getIdSrc())){
-						listNeighbors.add(mess.getIdSrc());
-					}
-					ep.timerNeighbor.put(mess.getIdSrc(), DELTA);
+			//If we detect a new neighbor
+			if(mess instanceof MessageProbe){
+				ArrayList<Long> listNeighbors = (ArrayList<Long>) ep.getNeighbors();
+				if(!listNeighbors.contains(mess.getIdSrc())){
+					listNeighbors.add(mess.getIdSrc());
 				}
+				ep.timerNeighbor.put(mess.getIdSrc(), DELTA);
+			}
 
-				//If we are invited to an election
-				else if(mess instanceof MessageElection){
+			//If we are invited to an election
+			/*else if(mess instanceof MessageElection){
 
-					IDElection idelec = (IDElection)mess.getContent();
-					System.out.println("Node "+node.getID()+" :: MSG ELECTION rcv :"+idelec+" from Node "+mess.getIdSrc());
+				IDElection idelec = (IDElection)mess.getContent();
+				System.out.println("Node "+node.getID()+" :: MSG ELECTION rcv :"+idelec+" from Node "+mess.getIdSrc());
 
-					
-					ep.ackContent.idElec = ep.currElec;
-					ep.ackContent.idLid = node.getID();
-					ep.ackContent.valueLid = ep.myValue;
-
-					//If this invitation is not more priority than the current we respond him
-					//notice him about the current election
-					if((ep.inElection && idelec.isLowerThan(ep.currElec))
-						|| (ep.inElection && idelec.isEqualTo(ep.currElec)) //it's not our parent
-						)
-					{
-						ep.sendAck(node, ep.getNodeWithId(mess.getIdSrc()));
-					}
-
-					//If we are not in election process or it is a more important election
-					//We participate to it
-					else if(!ep.inElection || idelec.isHigherThan(ep.currElec)){
-						ep.currElec = idelec;
-						ep.parent = getNodeWithId(mess.getIdSrc());
-						ep.inElection = true;
-
-						//Propagate the election msg
-						MessageElection prop;
-						for(int i = 0; i < ep.neighbors.size(); i++){
-							if(ep.neighbors.get(i) != ep.parent.getID()){
-								prop = new MessageElection(node.getID(), ep.neighbors.get(i), idelec, protocol_id);
-								emitter.emit(node, prop);								
-							}
-						}
-
-						//We wait the child acks
-						ep.waitedNeighbors = new ArrayList<Long>();
-						ep.waitedNeighbors.addAll(ep.neighbors);
-						ep.waitedNeighbors.remove(mess.getIdSrc());
-
-						ep.ackContent.idElec = idelec;
-
-					}
-
-					if(ep.parent != null)
-						System.out.println(ep.currElec+" Node "+node.getID()+" is a child of Node "+ep.parent.getIndex());
-					else 
-						System.out.println(ep.currElec+" Node "+node.getID()+" is a root");
-				}
 				
-				else if(mess instanceof MessageAck){
-					AckContent content = (AckContent) mess.getContent();
+				ep.ackContent.idElec = ep.currElec;
+				ep.ackContent.idLid = node.getID();
+				ep.ackContent.valueLid = ep.myValue;
 
-					if(content == null && content.idElec.isEqualTo(ep.currElec)){
-						System.out.print(ep.currElec+" Node "+node.getID()+" rcv "+content+" from Node"+ mess.getIdSrc());
-						ep.waitedNeighbors.remove(mess.getIdSrc());
-						System.out.println(" : it is not my child (wait "+ep.waitedNeighbors.size()+")");
-					}
-					else if(!(content.idElec.isLowerThan(ep.currElec))){
-						System.out.print(ep.currElec+" Node "+node.getID()+" rcv "+content+" from Node"+ mess.getIdSrc());
-						System.out.println(" : OK");
-						if(content.valueLid > ep.ackContent.valueLid){
-							ep.ackContent = content;
+				//If this invitation is not more priority than the current we respond him
+				//notice him about the current election
+				if((ep.inElection && idelec.isLowerThan(ep.currElec))
+					|| (ep.inElection && idelec.isEqualTo(ep.currElec)) //it's not our parent
+					)
+				{
+					ep.sendAck(node, ep.getNodeWithId(mess.getIdSrc()));
+				}
+
+				//If we are not in election process or it is a more important election
+				//We participate to it
+				else if(!ep.inElection || idelec.isHigherThan(ep.currElec)){
+					ep.currElec = idelec;
+					ep.parent = getNodeWithId(mess.getIdSrc());
+					ep.inElection = true;
+
+					//Propagate the election msg
+					MessageElection prop;
+					for(int i = 0; i < ep.neighbors.size(); i++){
+						if(ep.neighbors.get(i) != ep.parent.getID()){
+							prop = new MessageElection(node.getID(), ep.neighbors.get(i), idelec, protocol_id);
+							emitter.emit(node, prop);								
 						}
-						ep.waitedNeighbors.remove(mess.getIdSrc());						
 					}
 
-					else{
-						System.out.print(ep.currElec+" Node "+node.getID()+" rcv "+content+" from Node"+ mess.getIdSrc());
-						System.out.println(" NO CARE !!");
-					}
-				}
-				else if(mess instanceof MessageLeader){
-					AckContent content = (AckContent) mess.getContent();
-					System.out.println("Node "+node.getID() + " :: LEADER "+content);
-					if(ep.inElection && !content.idElec.isLowerThan(ep.currElec)){
-						System.out.println(ep.currElec+" Node "+node.getID()+" rcv LEADER "+content+" from Node"+ mess.getIdSrc());
-						ep.inElection = false;
-						ep.pendingAck = false;
-						ep.idLeader = content.idLid;
-						ep.currElec = null;
+					//We wait the child acks
+					ep.waitedNeighbors = new ArrayList<Long>();
+					ep.waitedNeighbors.addAll(ep.neighbors);
+					ep.waitedNeighbors.remove(mess.getIdSrc());
 
-						emitter.emit(node, mess);						
-					}
+					ep.ackContent.idElec = idelec;
+
 				}
+
+				if(ep.parent != null)
+					System.out.println(ep.currElec+" Node "+node.getID()+" is a child of Node "+ep.parent.getIndex());
+				else 
+					System.out.println(ep.currElec+" Node "+node.getID()+" is a root");
 			}
-		}
-	}
-
-	public boolean canDeliver(Node node, Message m){
-		boolean canDeliver = false;
-		Node src = getNodeWithId(m.getIdSrc());
-		double px, py, ph;
-		
-		if(src != null && src != node){
-			PositionProtocolImpl posTmp, posN;
-			int scope;
-			posN = (PositionProtocolImpl) node.getProtocol(position_pid);
-			posTmp = (PositionProtocolImpl) src.getProtocol(position_pid);
-			scope = ((EmitterImpl)node.getProtocol(emitter_pid)).getScope();
-
-			//Pythagore theorem
-			px = Math.abs(posN.getX() - posTmp.getX());
-			py = Math.abs(posN.getY() - posTmp.getY());
-			ph = Math.sqrt(Math.pow(px, 2) + Math.pow(py, 2));
 			
-			if(ph <= scope
-					&& (m.getIdDest() == Emitter.ALL || m.getIdDest() == node.getID())){
-				canDeliver = true;
+			else if(mess instanceof MessageAck){
+				AckContent content = (AckContent) mess.getContent();
+
+				if(content == null && content.idElec.isEqualTo(ep.currElec)){
+					System.out.print(ep.currElec+" Node "+node.getID()+" rcv "+content+" from Node"+ mess.getIdSrc());
+					ep.waitedNeighbors.remove(mess.getIdSrc());
+					System.out.println(" : it is not my child (wait "+ep.waitedNeighbors.size()+")");
+				}
+				else if(!(content.idElec.isLowerThan(ep.currElec))){
+					System.out.print(ep.currElec+" Node "+node.getID()+" rcv "+content+" from Node"+ mess.getIdSrc());
+					System.out.println(" : OK");
+					if(content.valueLid > ep.ackContent.valueLid){
+						ep.ackContent = content;
+					}
+					ep.waitedNeighbors.remove(mess.getIdSrc());						
+				}
+
+				else{
+					System.out.print(ep.currElec+" Node "+node.getID()+" rcv "+content+" from Node"+ mess.getIdSrc());
+					System.out.println(" NO CARE !!");
+				}
 			}
+			else if(mess instanceof MessageLeader){
+				AckContent content = (AckContent) mess.getContent();
+				System.out.println("Node "+node.getID() + " :: LEADER "+content);
+				if(ep.inElection && !content.idElec.isLowerThan(ep.currElec)){
+					System.out.println(ep.currElec+" Node "+node.getID()+" rcv LEADER "+content+" from Node"+ mess.getIdSrc());
+					ep.inElection = false;
+					ep.pendingAck = false;
+					ep.idLeader = content.idLid;
+					ep.currElec = null;
+
+					emitter.emit(node, mess);						
+				}
+			}*/
 		}
-		return canDeliver;
 	}
 
 	public Node getNodeWithId(Long id){
