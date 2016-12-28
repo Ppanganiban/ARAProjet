@@ -8,10 +8,10 @@ protocol.positionprotocol PositionProtocolImpl
 protocol.positionprotocol.maxX 500
 protocol.positionprotocol.maxY 500
 protocol.positionprotocol.maxSpeed 1
-protocol.positionprotocol.timePause 1000
+protocol.positionprotocol.timePause 500
 
 protocol.emitter EmitterImpl
-protocol.emitter.scope 200
+protocol.emitter.scope 500
 protocol.emitter.latency 5
 protocol.emitter.electionprotocol electionprotocol
 protocol.emitter.positionprotocol positionprotocol

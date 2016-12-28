@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.swing.text.Position;
+import javax.swing.text.AbstractDocument.Content;
 import javax.xml.ws.handler.MessageContext.Scope;
 
 import org.lsmp.djep.vectorJep.function.MSubtract;
@@ -16,7 +17,8 @@ import peersim.edsim.EDSimulator;
 
 public class ElectionProtocolImpl implements ElectionProtocol{
 	private static final int MAXVAL = 2000;
-	
+	private static final int NONE = -1;
+
 	private static final String PROBE = "PROBE";
 	private static final String ELECTION = "ELECTION";
 	private static final String ACK = "ACK";
@@ -51,7 +53,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 		emitter_pid = Configuration.getPid(prefix+"."+PAR_EMITTER);
 
 		inElection = false;
-		idLeader = -1;
+		idLeader = NONE;
 		myNumElec = 0;
 		pendingAck = false;
 		myValue = (int) (Math.random() * MAXVAL);
@@ -59,9 +61,9 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 		currElec = null;
 		parent = null;
 		neighbors = new ArrayList<Long>();
-		waitedNeighbors = null;
+		waitedNeighbors = new ArrayList<Long>();
 		timerNeighbor = new HashMap<Long, Integer>();
-		ackContent = new AckContent(currElec, -1, -1);
+		ackContent = new AckContent(currElec, NONE, NONE);
 	}
 
 	public Object clone(){
@@ -69,10 +71,10 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 		try{
 			ep = (ElectionProtocolImpl) super.clone();
 			ep.neighbors = new ArrayList<Long>();
-			ep.waitedNeighbors = null;
+			ep.waitedNeighbors = new ArrayList<Long>();
 			ep.timerNeighbor = new HashMap<Long, Integer>();
 			ep.myValue = (int) (Math.random() * MAXVAL);
-			ackContent = new AckContent(currElec, -1, -1);
+			ackContent = new AckContent(currElec, NONE, NONE);
 		}
 		catch( CloneNotSupportedException e ) {} // never happens
 		return ep;
@@ -113,64 +115,77 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 			throw new RuntimeException("Receive Message for wrong protocol");
 		}
 		ElectionProtocolImpl ep = (ElectionProtocolImpl) node.getProtocol(protocol_id);
+		EmitterImpl emitter = (EmitterImpl) node.getProtocol(emitter_pid);
 
+		//Happens before every paint of the nodes
 		if (event == null){
-			//Check if a neighbor is still connected
+			//We delete neighbors which doesn't respond
 			for(Map.Entry<Long, Integer> entry : ep.timerNeighbor.entrySet()) {		    
 			    if (entry.getValue() > 0){
 			    	Integer tmp = entry.getValue() - 1;
 			    	entry.setValue(tmp);
+
 				    if(entry.getValue() <= 0 ){
 						ep.getNeighbors().remove(entry.getKey());
 
-						//If we waited this neighbor for an election we remove it
+					/*	//If we waited this neighbor for an election we remove it
 						if(ep.inElection) {
 							ep.waitedNeighbors.remove(entry.getKey());
 
 							//If it was our parent we become the new src of leader election
 							if(ep.parent != null && ep.parent.getID() == entry.getKey()){
-								ep.currElec.setId(node.getID());
-								ep.pendingAck = false;
+								System.out.println("Node "+node.getID()+" is the new src");
+								ep.triggerElection(node);
 							}
 						}
-							
 
 						//If it was the leader we triger a new election
 						if(entry.getKey() == idLeader){
-							IDElection ide = new IDElection(ep.myNumElec, node.getID());
-							MessageElection msg = new MessageElection(node.getID(),Emitter.ALL, ide, protocol_id);
-							EmitterImpl emitter = (EmitterImpl) node.getProtocol(emitter_pid);
-							emitter.emit(node, msg);
+							ep.triggerElection(node);
 						}
+					*/
 				    }
 			    }
 			}
 
 			//Sends a Probe msg to all nodes in scope
 			MessageProbe msg = new MessageProbe(node.getID(),Emitter.ALL, protocol_id);
-			EmitterImpl emitter = (EmitterImpl) node.getProtocol(emitter_pid);
 			emitter.emit(node, msg);
-			
+
 			//If we are inElection we look if we have all ack
-			if(ep.inElection){
-				if(ep.waitedNeighbors.size() == 0){
-					//If we didnt send yet our ack to our father and we are not the src
-					if(!ep.pendingAck && ep.currElec.getId() != node.getID()){
-						sendAck(node, ep.parent);
-						ep.pendingAck = true;						
-					}else if (ep.currElec.getId() == node.getID()) {
-						System.out.println("Node "+node.getID()+" new leader is node "+ackContent);
-						ep.inElection = false;
-					}
+			if(ep.inElection && ep.waitedNeighbors.size() == 0){
+
+				//If we didnt send yet our ack to our father and we are not the src
+				//We do it
+				if(!ep.pendingAck && ep.currElec.getId() != node.getID()){
+					System.out.println("Node "+node.getID()+" sends its ack to "+ep.parent.getID());
+					sendAck(node, ep.parent);
+					ep.pendingAck = true;
+				}
+				//If we are the src of election we broadcast it
+				else if (ep.currElec.getId() == node.getID()) {
+					System.out.println("Node "+node.getID()+" new leader is node "+ep.ackContent.idLid);
+
+					ep.inElection = false;
+					ep.idLeader = ep.ackContent.idLid;
+					ep.currElec = null;
+					ep.pendingAck = false;
+
+					MessageLeader msglid = new MessageLeader(node.getID(), Emitter.ALL, ep.ackContent, protocol_id);
+					emitter.emit(node, msglid);
 				}
 			}
 		}
 		else if(event instanceof Message){
 			boolean canDeliver;
-			Message mess =(Message) event; 
+			Message mess =(Message) event;
+
+			//Check if we are in range to rcv it
 			canDeliver = this.canDeliver(node, mess);
 
 			if (canDeliver){
+
+				//If we detect a new neighbor
 				if(mess instanceof MessageProbe){
 					ArrayList<Long> listNeighbors = (ArrayList<Long>) ep.getNeighbors();
 					if(!listNeighbors.contains(mess.getIdSrc())){
@@ -178,46 +193,52 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 					}
 					ep.timerNeighbor.put(mess.getIdSrc(), DELTA);
 				}
-				
+
+				//If we are invited to an election
 				else if(mess instanceof MessageElection){
+
+					IDElection idelec = (IDElection)mess.getContent();
+					System.out.println("Node "+node.getID()+" :: MSG ELECTION rcv :"+idelec+" from Node "+mess.getIdSrc());
+
+					
 					ep.ackContent.idElec = ep.currElec;
 					ep.ackContent.idLid = node.getID();
 					ep.ackContent.valueLid = ep.myValue;
 
-					IDElection idelec = (IDElection)mess.getContent();
-					System.out.println("Node "+node.getID()+" :: Election rcv :"+idelec+" from Node "+mess.getIdSrc());
-					if(!ep.inElection 
-						|| idelec.isHigherThan(ep.currElec) ){
+					//If this invitation is not more priority than the current we respond him
+					//notice him about the current election
+					if((ep.inElection && idelec.isLowerThan(ep.currElec))
+						|| (ep.inElection && idelec.isEqualTo(ep.currElec)) //it's not our parent
+						)
+					{
+						ep.sendAck(node, ep.getNodeWithId(mess.getIdSrc()));
+					}
 
+					//If we are not in election process or it is a more important election
+					//We participate to it
+					else if(!ep.inElection || idelec.isHigherThan(ep.currElec)){
 						ep.currElec = idelec;
 						ep.parent = getNodeWithId(mess.getIdSrc());
 						ep.inElection = true;
 
 						//Propagate the election msg
 						MessageElection prop;
-						EmitterImpl em;
-						
 						for(int i = 0; i < ep.neighbors.size(); i++){
 							if(ep.neighbors.get(i) != ep.parent.getID()){
 								prop = new MessageElection(node.getID(), ep.neighbors.get(i), idelec, protocol_id);
-								em = (EmitterImpl)node.getProtocol(emitter_pid);
-								em.emit(node, prop);								
+								emitter.emit(node, prop);								
 							}
 						}
+
+						//We wait the child acks
 						ep.waitedNeighbors = new ArrayList<Long>();
 						ep.waitedNeighbors.addAll(ep.neighbors);
 						ep.waitedNeighbors.remove(mess.getIdSrc());
 
 						ep.ackContent.idElec = idelec;
 
-						//If it's a leaf we can respond directly to its parent
-						if(ep.waitedNeighbors.size() == 0){
-							System.out.println("Node "+node.getID()+" is a leaf");
-
-							ep.pendingAck = true;
-							ep.sendAck(node, ep.parent);
-						}
 					}
+
 					if(ep.parent != null)
 						System.out.println(ep.currElec+" Node "+node.getID()+" is a child of Node "+ep.parent.getIndex());
 					else 
@@ -226,11 +247,38 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 				
 				else if(mess instanceof MessageAck){
 					AckContent content = (AckContent) mess.getContent();
-					System.out.println(ep.currElec+" Node "+node.getID()+" rcv "+content+" from Node"+ mess.getIdDest());
-					if(content.valueLid > ep.ackContent.valueLid){
-						ep.ackContent = content;
+
+					if(content == null && content.idElec.isEqualTo(ep.currElec)){
+						System.out.print(ep.currElec+" Node "+node.getID()+" rcv "+content+" from Node"+ mess.getIdSrc());
+						ep.waitedNeighbors.remove(mess.getIdSrc());
+						System.out.println(" : it is not my child (wait "+ep.waitedNeighbors.size()+")");
 					}
-					ep.waitedNeighbors.remove(mess.getIdSrc());
+					else if(!(content.idElec.isLowerThan(ep.currElec))){
+						System.out.print(ep.currElec+" Node "+node.getID()+" rcv "+content+" from Node"+ mess.getIdSrc());
+						System.out.println(" : OK");
+						if(content.valueLid > ep.ackContent.valueLid){
+							ep.ackContent = content;
+						}
+						ep.waitedNeighbors.remove(mess.getIdSrc());						
+					}
+
+					else{
+						System.out.print(ep.currElec+" Node "+node.getID()+" rcv "+content+" from Node"+ mess.getIdSrc());
+						System.out.println(" NO CARE !!");
+					}
+				}
+				else if(mess instanceof MessageLeader){
+					AckContent content = (AckContent) mess.getContent();
+					System.out.println("Node "+node.getID() + " :: LEADER "+content);
+					if(ep.inElection && !content.idElec.isLowerThan(ep.currElec)){
+						System.out.println(ep.currElec+" Node "+node.getID()+" rcv LEADER "+content+" from Node"+ mess.getIdSrc());
+						ep.inElection = false;
+						ep.pendingAck = false;
+						ep.idLeader = content.idLid;
+						ep.currElec = null;
+
+						emitter.emit(node, mess);						
+					}
 				}
 			}
 		}
@@ -246,7 +294,6 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 			int scope;
 			posN = (PositionProtocolImpl) node.getProtocol(position_pid);
 			posTmp = (PositionProtocolImpl) src.getProtocol(position_pid);
-			
 			scope = ((EmitterImpl)node.getProtocol(emitter_pid)).getScope();
 
 			//Pythagore theorem
@@ -284,6 +331,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 		ep = ((ElectionProtocolImpl) n.getProtocol(protocol_id));
 		idelec = new IDElection(ep.getMyNumElec(), n.getID());
 		if(!ep.inElection || idelec.isHigherThan(ep.currElec)){
+			ep.idLeader = NONE;
 			ep.inElection = true;
 			ep.currElec = idelec;
 			ep.parent = null;
@@ -309,7 +357,13 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 	public void sendAck(Node src, Node dest){
 		ElectionProtocolImpl ep = (ElectionProtocolImpl) src.getProtocol(protocol_id);
 		EmitterImpl emi = (EmitterImpl) src.getProtocol(emitter_pid);
-		MessageAck msg = new MessageAck(src.getID(), dest.getID(), ep.ackContent, protocol_id);
+		
+		MessageAck msg;
+		
+		if(dest == parent)
+			msg = new MessageAck(src.getID(), dest.getID(), ep.ackContent, protocol_id);
+		else
+			msg = new MessageAck(src.getID(), dest.getID(), null, protocol_id);
 		emi.emit(src, msg);
 	}
 	

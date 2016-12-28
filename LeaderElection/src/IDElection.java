@@ -24,7 +24,23 @@ public class IDElection {
 		}
 		return false;
 	}
-	
+
+	public boolean isLowerThan(IDElection idElec){
+		if( idElec == null
+			||(num < idElec.getNum())
+			|| ((num == idElec.getNum()) && (id < idElec.getId()))
+			){
+			return true;
+		}
+		return false;
+	}
+
+	public boolean isEqualTo(IDElection idElec){
+		if(num == idElec.getNum() && id == idElec.getId())
+			return true;
+		return false;
+	}
+
 	public void setId(long id){
 		this.id = id;
 	}
