@@ -1,4 +1,5 @@
 import peersim.config.Configuration;
+import peersim.core.CommonState;
 import peersim.core.Node;
 
 public class PositionProtocolImpl implements PositionProtocol{
@@ -24,11 +25,11 @@ public class PositionProtocolImpl implements PositionProtocol{
 		maxX = Configuration.getDouble(prefix+".maxX");
 		maxY = Configuration.getDouble(prefix+".maxY");
 
-		x = Math.random() * maxX;
-		y = Math.random() * maxY;
+		x = CommonState.r.nextDouble() * maxX;
+		y = CommonState.r.nextDouble() * maxY;
 
-		xDest = Math.random() * maxX;
-		yDest = Math.random() * maxY;
+		xDest = CommonState.r.nextDouble() * maxX;
+		yDest = CommonState.r.nextDouble() * maxY;
 
 		currSpeed = (int)(Math.random() * maxSpeed + 1);
 		waitTime = timePause;
@@ -40,13 +41,13 @@ public class PositionProtocolImpl implements PositionProtocol{
 		try {
 			pp = (PositionProtocolImpl) super.clone();
 
-			pp.x = Math.random() * maxX;
-			pp.y = Math.random() * maxY;
+			pp.x = CommonState.r.nextDouble() * maxX;
+			pp.y = CommonState.r.nextDouble() * maxY;
 
-			pp.xDest = Math.random() * maxX;
-			pp.yDest = Math.random() * maxY;
+			pp.xDest = CommonState.r.nextDouble() * maxX;
+			pp.yDest = CommonState.r.nextDouble() * maxY;
 
-			pp.currSpeed = (int)(Math.random() * maxSpeed + 1);
+			pp.currSpeed = (int)(CommonState.r.nextDouble() * maxSpeed + 1);
 			pp.waitTime = timePause;
 			
 		}

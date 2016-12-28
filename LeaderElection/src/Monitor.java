@@ -154,28 +154,25 @@ public class Monitor extends JPanel implements Control {
 
 	@Override
 	public boolean execute() {
-		
 		for(int i = 0; i < Network.size(); i++){
-			((EDProtocol) Network.get(i).getProtocol(election_pid)).processEvent(Network.get(i), election_pid, null);
+			EDSimulator.add(0, null, Network.get(i), election_pid);
 		}
 		for(int i = 0; i < Network.size(); i++){
-			((EDProtocol) Network.get(i).getProtocol(position_pid)).processEvent(Network.get(i), position_pid, null);
+			EDSimulator.add(0, null, Network.get(i), position_pid);
 		}
-		
+
 		if(frame == null){
 			init();
 
 			//We init the first election
-			ElectionProtocolImpl ep;
+			/*ElectionProtocolImpl ep;
 			Node n;
-
-			/*for(int i = 0; i < Network.size(); i++){
+			for(int i = 0; i < Network.size(); i++){
 				n = Network.get(i);
 				ep = ((ElectionProtocolImpl) n.getProtocol(election_pid));
 				ep.triggerElection(n);
 			}*/
 		}
-
 		this.repaint();
 		try {
 			int nb_milisec=(int)time_slow;
@@ -185,4 +182,5 @@ public class Monitor extends JPanel implements Control {
 		} catch (InterruptedException e) {}
 		return false;
 	}
+
 }
