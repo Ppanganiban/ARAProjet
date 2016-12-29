@@ -34,8 +34,8 @@ public class EmitterImpl implements Emitter{
 				posTmp = (PositionProtocolImpl) host.getProtocol(position_pid);
 
 				//Pythagore theorem
-				px = Math.abs(posN.getX() - posTmp.getX());
-				py = Math.abs(posN.getY() - posTmp.getY());
+				px = posN.getX() - posTmp.getX();
+				py = posN.getY() - posTmp.getY();
 				ph = Math.sqrt(Math.pow(px, 2) + Math.pow(py, 2));
 				
 				if(ph <= scope && (m.getIdDest() == Emitter.ALL || m.getIdDest() == node.getID())){

@@ -151,9 +151,21 @@ public class Monitor extends JPanel implements Control {
 		return (int)res;
 	}
 	
-
+ public static boolean firstElection = false;
+ 
 	@Override
 	public boolean execute() {
+		/*if(firstElection){
+			ElectionProtocolImpl ep;
+			Node n;
+			for(int i = 0; i < Network.size(); i++){
+				n = Network.get(i);
+				ep = ((ElectionProtocolImpl) n.getProtocol(election_pid));
+				ep.triggerElection(n);
+			}
+			firstElection = false;
+		}*/
+		
 		for(int i = 0; i < Network.size(); i++){
 			EDSimulator.add(0, null, Network.get(i), election_pid);
 		}
@@ -162,16 +174,15 @@ public class Monitor extends JPanel implements Control {
 		}
 
 		if(frame == null){
-			init();
-
-			//We init the first election
-			/*ElectionProtocolImpl ep;
+			init();			
+			firstElection = true;
+			ElectionProtocolImpl ep;
 			Node n;
 			for(int i = 0; i < Network.size(); i++){
 				n = Network.get(i);
 				ep = ((ElectionProtocolImpl) n.getProtocol(election_pid));
 				ep.triggerElection(n);
-			}*/
+			}
 		}
 		this.repaint();
 		try {
