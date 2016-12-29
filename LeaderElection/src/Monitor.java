@@ -150,40 +150,23 @@ public class Monitor extends JPanel implements Control {
 		double res = (y_terrain * dimension_frame.getHeight()) / dimension_terrain.getHeight();
 		return (int)res;
 	}
-	
- public static boolean firstElection = false;
- 
 	@Override
 	public boolean execute() {
-		/*if(firstElection){
-			ElectionProtocolImpl ep;
-			Node n;
-			for(int i = 0; i < Network.size(); i++){
-				n = Network.get(i);
-				ep = ((ElectionProtocolImpl) n.getProtocol(election_pid));
-				ep.triggerElection(n);
-			}
-			firstElection = false;
-		}*/
-		
+
+		if(frame == null){
+			init();
+		}
+
+		//Check neighbors and if there is somthing to do
 		for(int i = 0; i < Network.size(); i++){
 			EDSimulator.add(0, null, Network.get(i), election_pid);
 		}
+		//Compute positions
 		for(int i = 0; i < Network.size(); i++){
 			EDSimulator.add(0, null, Network.get(i), position_pid);
 		}
 
-		if(frame == null){
-			init();			
-			firstElection = true;
-			ElectionProtocolImpl ep;
-			Node n;
-			for(int i = 0; i < Network.size(); i++){
-				n = Network.get(i);
-				ep = ((ElectionProtocolImpl) n.getProtocol(election_pid));
-				ep.triggerElection(n);
-			}
-		}
+
 		this.repaint();
 		try {
 			int nb_milisec=(int)time_slow;

@@ -38,12 +38,11 @@ public class EmitterImpl implements Emitter{
 				py = posN.getY() - posTmp.getY();
 				ph = Math.sqrt(Math.pow(px, 2) + Math.pow(py, 2));
 				
-				if(ph <= scope && (m.getIdDest() == Emitter.ALL || m.getIdDest() == node.getID())){
+				if(ph <= scope){
 					EDSimulator.add(latency, m, node, election_pid);
 				}
 			}
 		}
-
 	}
 
 	public Object clone(){

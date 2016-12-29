@@ -36,7 +36,7 @@ public class IDElection {
 	}
 
 	public boolean isEqualTo(IDElection idElec){
-		if(num == idElec.getNum() && id == idElec.getId())
+		if(idElec != null && num == idElec.getNum() && id == idElec.getId())
 			return true;
 		return false;
 	}

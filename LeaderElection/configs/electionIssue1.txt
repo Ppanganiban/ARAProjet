@@ -1,5 +1,5 @@
 simulation.endtime 10000
-random.seed 3
+random.seed 5
 
 network.size 3
 
