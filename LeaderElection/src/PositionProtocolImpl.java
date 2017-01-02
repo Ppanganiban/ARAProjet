@@ -31,7 +31,7 @@ public class PositionProtocolImpl implements PositionProtocol{
 		xDest = CommonState.r.nextDouble() * maxX;
 		yDest = CommonState.r.nextDouble() * maxY;
 
-		currSpeed = (int)(Math.random() * maxSpeed + 1);
+		currSpeed = (int)(CommonState.r.nextDouble() * maxSpeed + 1);
 		waitTime = timePause;
 		
 	}
@@ -100,9 +100,9 @@ public class PositionProtocolImpl implements PositionProtocol{
 			}
 			//We set up the new destination
 			else{
-				xDest = Math.random() * maxX;
-				yDest = Math.random() * maxY;
-				currSpeed = (int)(Math.random() * maxSpeed + 1);
+				xDest = CommonState.r.nextDouble() * maxX;
+				yDest = CommonState.r.nextDouble() * maxY;
+				currSpeed = (int)(CommonState.r.nextDouble() * maxSpeed + 1);
 				waitTime = timePause;
 			}
 		}else{
