@@ -174,6 +174,9 @@ public class ElectionProtocolImpl implements ElectionProtocol{
               emitter.emit(node, prop);                
             }
           }
+          else if (ep.inElection && idelec.isEqualTo(ep.currElec) && ep.parent.getID() != mess.getIdSrc()){
+              emitter.emit(node, new MessageAck(node.getID(), mess.getIdSrc(), new MessContent(ep.currElec, NONE, NONE), ep.protocol_id));
+          }
           if(ep.parent != null)
             System.out.println(ep.currElec+" Node "+node.getID()+" is a child of Node "+ep.parent.getIndex());
           else 
@@ -194,6 +197,9 @@ public class ElectionProtocolImpl implements ElectionProtocol{
                   ep.ackContent.valueLid = content.valueLid;
                   ep.ackContent.idLid = content.idLid;
                 }
+              }
+              else{
+            	  System.out.println("Node "+mess.getIdSrc()+" is not child of Node "+node.getID());
               }
               System.out.println(ep.currElec+" Node "+node.getID()+" local leader "+ep.ackContent);
               ep.waitedNeighbors.remove(mess.getIdSrc());
@@ -263,6 +269,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
                 ep.pendingMsgLeader = (MessageLeader) mess;
                 ep.idPendingMsgLeader = mess.getIdSrc();
               }
+              ep.waitedNeighbors.remove(mess.getIdSrc());
             }
             
           }
@@ -323,11 +330,11 @@ public class ElectionProtocolImpl implements ElectionProtocol{
             }
           //If it was the leader we triger a new election
             if(entry.getKey() == idLeader){
-              System.out.println("LEADER "+entry.getKey()+"DISCONNECT");
-              //ep.triggerElection(node);
-              ep.idLeader = node.getID();
-              ep.valueLeader = ep.myValue;
-            } 
+              System.out.println("LEADER "+entry.getKey()+" DISCONNECT");
+              ep.triggerElection(node);
+              //ep.idLeader = node.getID();
+              //ep.valueLeader = ep.myValue;
+            }
           }    
         }
       }
