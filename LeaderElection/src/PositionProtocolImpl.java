@@ -1,3 +1,5 @@
+import javax.swing.text.Position;
+
 import peersim.config.Configuration;
 import peersim.core.CommonState;
 import peersim.core.Node;
@@ -57,56 +59,57 @@ public class PositionProtocolImpl implements PositionProtocol{
 
 	@Override
 	public void processEvent(Node node, int pid, Object event) {
+	  PositionProtocolImpl pos = (PositionProtocolImpl) node.getProtocol(protocol_id);
 		if(protocol_id != pid){
 			throw new RuntimeException("Receive Message for wrong protocol");
 		}
-		if(waitTime == 0){
+		if(pos.waitTime == 0){
 			//we compute the new position of x if it is not at destination
-			if(x != xDest && y != yDest){
+			if(pos.x != pos.xDest && pos.y != pos.yDest){
 				double px, py, ph;
 				double dx, dy;
 
 				//Pythagore theorem
-				px = Math.abs(x - xDest);
-				py = Math.abs(y - yDest);
+				px = Math.abs(pos.x - pos.xDest);
+				py = Math.abs(pos.y - pos.yDest);
 				ph = Math.sqrt(Math.pow(px, 2) + Math.pow(py, 2));
 
 				//Thales theorem
 				dx = currSpeed * px / ph;
 
-				if (x > xDest)
-					if(x - dx > xDest)
-						x -= dx;
+				if (pos.x > pos.xDest)
+					if(pos.x - dx > pos.xDest)
+					  pos.x -= dx;
 					else
-						x = xDest;
+					  pos.x = pos.xDest;
 				else
-					if(x + dx < xDest)
-						x += dx;
+					if(pos.x + dx < pos.xDest)
+					  pos.x += dx;
 					else
-						x = xDest;
+					  pos.x = pos.xDest;
 				
-				dy = currSpeed * py / ph;
+				dy = pos.currSpeed * py / ph;
 
-				if (y > yDest)
-					if(y - dy > yDest)
-						y -= dy;
+				if (pos.y > pos.yDest)
+					if(pos.y - dy > pos.yDest)
+					  pos.y -= dy;
 					else
-						y = yDest;
+					  pos.y = pos.yDest;
 				else
-					if(y + dy < yDest)
-						y += dy;
+					if(pos.y + dy < pos.yDest)
+					  pos.y += dy;
 					else
-						y = yDest;
+					  pos.y = pos.yDest;
 			}
 			//We set up the new destination
 			else{
-				xDest = CommonState.r.nextDouble() * maxX;
-				yDest = CommonState.r.nextDouble() * maxY;
-				currSpeed = (int)(CommonState.r.nextDouble() * maxSpeed + 1);
-				waitTime = timePause;
+			  pos.xDest = CommonState.r.nextDouble() * maxX;
+			  pos.yDest = CommonState.r.nextDouble() * maxY;
+			  pos.currSpeed = (int)(CommonState.r.nextDouble() * maxSpeed + 1);
+			  pos.waitTime = timePause;
 			}
 		}else{
-			waitTime --;
+		  pos.waitTime --;
 		}
 	}
 

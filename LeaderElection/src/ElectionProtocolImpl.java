@@ -23,8 +23,6 @@ public class ElectionProtocolImpl implements ElectionProtocol{
   private boolean inElection;
   private long idLeader;
   private long valueLeader;
-  private int timerLeader;
-
   private IDElection currElec;
   private long srcElec;
 
@@ -34,6 +32,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
   private boolean pendingAck;
   private MessContent ackContent;
 
+  private long refToLeader;
   private List<Long> neighbors;
   private List<Long> waitedNeighbors;
   private HashMap<Long, Integer> timerNeighbor;
@@ -49,7 +48,6 @@ public class ElectionProtocolImpl implements ElectionProtocol{
     inElection = false;
     idLeader = NONE;
     valueLeader = NONE;
-
     myNumElec = 0;
     pendingAck = false;
     myValue = (int) (CommonState.r.nextDouble() * MAXVAL);
@@ -57,6 +55,8 @@ public class ElectionProtocolImpl implements ElectionProtocol{
     currElec = null;
     srcElec = NONE;
     parent = null;
+    refToLeader = NONE;
+
     neighbors = new ArrayList<Long>();
     waitedNeighbors = new ArrayList<Long>();
     timerNeighbor = new HashMap<Long, Integer>();
@@ -76,7 +76,8 @@ public class ElectionProtocolImpl implements ElectionProtocol{
       ep.myValue = (int) (CommonState.r.nextDouble() * MAXVAL);
       ep.ackContent = new MessContent(currElec, NONE, NONE);
       ep.pendingMsgLeader = null;
-      idPendingMsgLeader = NONE;
+      ep.refToLeader = NONE;
+      ep.idPendingMsgLeader = NONE;
     }
     catch( CloneNotSupportedException e ) {} // never happens
     return ep;
@@ -130,31 +131,27 @@ public class ElectionProtocolImpl implements ElectionProtocol{
         canBeDeliver = true;
   
       if(canBeDeliver){
-        //If we detect a new neighbor
+
         if(mess instanceof MessageProbe){
           ArrayList<Long> listNeighbors = (ArrayList<Long>) ep.getNeighbors();
-          long probLid = (long) mess.getContent();
-
+          //If it's a new neighbor we exchange the current leader
           if(!listNeighbors.contains(mess.getIdSrc())){
             listNeighbors.add(mess.getIdSrc());
             System.out.println("Node "+node.getID()+" new neighbor node "+mess.getIdSrc());
             emitter.emit(node, new MessageLeader(node.getID(), mess.getIdSrc(), new MessContent(null, ep.idLeader, ep.valueLeader), protocol_id) );
           }
           ep.timerNeighbor.put(mess.getIdSrc(), DELTA);
-
-          if(!ep.inElection && probLid == ep.idLeader){
-           // System.out.println("Node "+node.getID()+" still connected to leader "+probLid);
-            ep.timerLeader = DELTA;
-          }
         }
+
         else if(mess instanceof MessageElection){
           IDElection idelec = (IDElection)mess.getContent();
           System.out.println("Node "+node.getID()+" :: MSG ELECTION rcv :"+idelec+" from Node "+mess.getIdSrc());
 
-          //If we are not in election
-          //OR we are in a election process
-          //We participate to it only if it is higher than the current
-          //If it's not the case, we do not respond in order to finish the current election and it wille be notify during the LEADER PHASE
+          /* If we are not in election
+           * OR we are in a election process
+           * We participate to it only if it is higher than the current
+           * If it's not the case, we do not respond in order to finish the current election and it wille be notify during the LEADER PHASE
+           */
           if (!ep.inElection || idelec.isHigherThan(ep.currElec)){
             System.out.println("Node "+node.getID()+" :: participates to this election :"+idelec+" prev: "+ep.currElec);
             ep.currElec = idelec;
@@ -165,6 +162,9 @@ public class ElectionProtocolImpl implements ElectionProtocol{
             ep.waitedNeighbors.addAll(ep.neighbors);
             ep.waitedNeighbors.remove(ep.parent.getID());
             ep.ackContent = new MessContent(idelec, node.getID(), ep.myValue);
+            ep.refToLeader = NONE;
+
+            System.out.println(ep.currElec+" Node "+node.getID()+" is a child of Node "+ep.parent.getIndex());
 
             //We propagate the election to ours neighbors
             MessageElection prop;
@@ -174,13 +174,12 @@ public class ElectionProtocolImpl implements ElectionProtocol{
               emitter.emit(node, prop);                
             }
           }
-          else if (ep.inElection && idelec.isEqualTo(ep.currElec) && ep.parent.getID() != mess.getIdSrc()){
+          else if (ep.inElection
+              && idelec.isEqualTo(ep.currElec)
+              && ep.srcElec != node.getID()
+              && ep.parent.getID() != mess.getIdSrc()){
               emitter.emit(node, new MessageAck(node.getID(), mess.getIdSrc(), new MessContent(ep.currElec, NONE, NONE), ep.protocol_id));
           }
-          if(ep.parent != null)
-            System.out.println(ep.currElec+" Node "+node.getID()+" is a child of Node "+ep.parent.getIndex());
-          else 
-            System.out.println(ep.currElec+" Node "+node.getID()+" is a root");
         }
         
         else if(mess instanceof MessageAck){
@@ -188,10 +187,11 @@ public class ElectionProtocolImpl implements ElectionProtocol{
           IDElection idelec = content.idElec;
           System.out.println(ep.currElec+" Node "+node.getID()+" rcv "+content+" from Node"+ mess.getIdSrc());
 
-          //We can only recv an ack from one of our child
+          /*
+           * We only treat the ack from our child
+           */
           if (ep.inElection){
             if (idelec.isEqualTo(ep.currElec)){
-              //It's our child
               if(content.idLid != NONE){
                 if(content.valueLid > ep.ackContent.valueLid){
                   ep.ackContent.valueLid = content.valueLid;
@@ -201,12 +201,8 @@ public class ElectionProtocolImpl implements ElectionProtocol{
               else{
             	  System.out.println("Node "+mess.getIdSrc()+" is not child of Node "+node.getID());
               }
-              System.out.println(ep.currElec+" Node "+node.getID()+" local leader "+ep.ackContent);
               ep.waitedNeighbors.remove(mess.getIdSrc());
             }
-          }
-          else{
-            System.err.println(ep.currElec+" Node "+node.getID()+" rcv "+content+" from Node"+ mess.getIdSrc() + "which is not its son !!!!");
           }
         }
 
@@ -221,8 +217,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
             System.out.println("Node "+node.getID() + " :: NEW LEADER "+content);
             ep.idLeader = content.idLid;
             ep.valueLeader = content.valueLid;
-            ep.timerLeader = DELTA;
-
+            ep.refToLeader = mess.getIdSrc(); //the src node of the msg will be our reference to the leader
             ep.inElection = false;
             ep.pendingAck = false;
             ep.currElec = null;
@@ -248,7 +243,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
               if(ep.valueLeader < content.valueLid){
                 ep.idLeader = content.idLid;
                 ep.valueLeader = content.valueLid;
-                ep.timerLeader = DELTA;
+                ep.refToLeader = mess.getIdSrc();
 
                 System.out.println(" new leader ");
                 MessageLeader prop;
@@ -263,7 +258,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
               }
             }
             else{
-              System.out.println("Node "+node.getID() + " :: already in election process. Put it in pendingMSGLeader "+content+" : ");
+              System.out.println("Node "+node.getID() + " :: already in election process "+ep.currElec+". Put it in pendingMSGLeader "+content+" : ");
               if(ep.pendingMsgLeader == null
                 || ((MessContent)ep.pendingMsgLeader.getContent()).valueLid < content.valueLid){
                 ep.pendingMsgLeader = (MessageLeader) mess;
@@ -288,10 +283,11 @@ public class ElectionProtocolImpl implements ElectionProtocol{
     EmitterImpl emitter  = (EmitterImpl) node.getProtocol(emitter_pid);
     ElectionProtocolImpl ep = (ElectionProtocolImpl) node.getProtocol(protocol_id);
 
-  //First call
+    //First call
     if(ep.idLeader == NONE){
       System.out.println("NO LEADER");
       ep.idLeader = node.getID();
+      ep.refToLeader = node.getID();
       ep.valueLeader = ep.myValue;
       ep.ackContent.idLid = node.getID();
       ep.ackContent.valueLid = ep.myValue;
@@ -303,24 +299,21 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 
     //We delete neighbors which didn't respond
     for(Map.Entry<Long, Integer> entry : ep.timerNeighbor.entrySet()) {
-        if (entry.getValue() > 0){
-          Integer tmp = entry.getValue() - 1;
-          entry.setValue(tmp);
+      if (entry.getValue() > 0){
+        Integer tmp = entry.getValue() - 1;
+        entry.setValue(tmp);
 
-          if(entry.getValue() <= 0 ){
+        if(entry.getValue() <= 0 ){
           ep.getNeighbors().remove(entry.getKey());
-
+          System.out.println("Node "+node.getID()+" remove neighbor Node "+entry.getKey());
           //If we waited this neighbor for an election we remove it
           if(ep.inElection) {
             ep.waitedNeighbors.remove(entry.getKey());
-
+  
             //If it was our parent we become the new src of leader election
             if(ep.parent != null && ep.parent.getID() == entry.getKey()){
               System.out.println("Node "+node.getID()+" is the new src");
-//              if(ep.currElec.getNum() > ep.myNumElec)
-//                ep.myNumElec = ep.currElec.getNum() + 1;
               ep.srcElec = node.getID();
-              //ep.triggerElection(node);
             }
           }
           else{
@@ -329,11 +322,13 @@ public class ElectionProtocolImpl implements ElectionProtocol{
               ep.pendingMsgLeader = null;
             }
           //If it was the leader we triger a new election
-            if(entry.getKey() == idLeader){
-              System.out.println("LEADER "+entry.getKey()+" DISCONNECT");
+            //if(entry.getKey() == ep.idLeader){
+              //System.out.println("LEADER "+entry.getKey()+" DISCONNECT");
+              //ep.triggerElection(node);
+            //}
+            if (entry.getKey() == ep.refToLeader){
+              System.out.println("Node "+node.getID()+" loses leader reference node "+ep.refToLeader);
               ep.triggerElection(node);
-              //ep.idLeader = node.getID();
-              //ep.valueLeader = ep.myValue;
             }
           }    
         }
@@ -349,7 +344,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
         if(ep.valueLeader < content.valueLid){
           ep.idLeader = content.idLid;
           ep.valueLeader = content.valueLid;
-          ep.timerLeader = DELTA;
+          ep.refToLeader = ep.pendingMsgLeader.getIdSrc();
           System.out.println(" new leader ");
           MessageLeader prop;
           for(int i = 0; i < ep.neighbors.size(); i++){
@@ -364,12 +359,6 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 
         ep.pendingMsgLeader = null;
         ep.idPendingMsgLeader = NONE;
-      }
-      ep.timerLeader --;
-      //We are disconnected to old leader
-      if(ep.timerLeader == 0 && ep.idLeader != node.getID()){
-        System.out.println("Node "+node.getID() + " is disconnected to Leader "+ ep.idLeader);
-        ep.triggerElection(node);
       }
     }
     else{
@@ -401,6 +390,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
     ep.myNumElec ++;
     
     ep.parent = null;
+    ep.refToLeader = n.getID();
     ep.waitedNeighbors = new ArrayList<Long>();
     ep.waitedNeighbors.addAll(ep.neighbors);
     ep.ackContent.idElec = idelec;
@@ -427,6 +417,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
       if(node.getID() == ep.srcElec){
         System.out.println(ep.currElec+" Node "+node.getID()+ " root broadcast Leader "+ep.ackContent);            
         ep.idLeader = ep.ackContent.idLid;
+        ep.refToLeader = node.getID();
         ep.valueLeader = ep.ackContent.valueLid;
         ep.inElection = false;
         ep.pendingAck = false;
