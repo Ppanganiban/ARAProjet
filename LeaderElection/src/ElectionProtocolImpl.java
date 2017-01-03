@@ -167,7 +167,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
             ep.waitedNeighbors.addAll(ep.neighbors);
             ep.waitedNeighbors.remove(ep.parent.getID());
             ep.ackContent = new MessContent(idelec, node.getID(), ep.myValue);
-
+            ep.pendingAck = false;
             System.out.println(ep.currElec+" Node "+node.getID()+" is a child of Node "+ep.parent.getIndex());
 
             //We propagate the election to ours neighbors
@@ -281,6 +281,10 @@ public class ElectionProtocolImpl implements ElectionProtocol{
             if(ep.parentToLeader == NONE){
               ep.parentToLeader = mess.getIdSrc();
             }
+            /*This condition is used if we switch our place with our old parent
+            if(ep.idLeader == mess.getIdSrc()){
+              ep.parentToLeader = mess.getIdSrc();
+            }*/
             if (ep.parentToLeader == mess.getIdSrc()){
               MessageProbeLeader m;
               ep.timerLeader = DELTALEADER;
@@ -356,10 +360,10 @@ public class ElectionProtocolImpl implements ElectionProtocol{
               ep.parentToLeader = NONE;
             }
           //If it was the leader we triger a new election
-           /*if(entry.getKey() == ep.idLeader){
+           if(entry.getKey() == ep.idLeader){
               System.out.println("LEADER "+entry.getKey()+" DISCONNECT");
               ep.triggerElection(node);
-            }*/
+            }
           }    
         }
       }

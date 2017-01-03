@@ -1,23 +1,26 @@
-N 20
+N 4
 LATENCY 1
 DELTA LATENCY * 2
+SEED 14
+SCOPE 150
+DIMX 300
+DIMY 300
 
 ####################################################
 
 simulation.endtime 10000
-random.seed 7
+random.seed SEED
 
 network.size N
 
-
 protocol.positionprotocol PositionProtocolImpl
-protocol.positionprotocol.maxX 700
-protocol.positionprotocol.maxY 700
+protocol.positionprotocol.maxX DIMX
+protocol.positionprotocol.maxY DIMY
 protocol.positionprotocol.maxSpeed 1
-protocol.positionprotocol.timePause 100
+protocol.positionprotocol.timePause 200
 
 protocol.emitter EmitterImpl
-protocol.emitter.scope 50
+protocol.emitter.scope SCOPE
 protocol.emitter.latency LATENCY
 protocol.emitter.electionprotocol electionprotocol
 protocol.emitter.positionprotocol positionprotocol
@@ -36,4 +39,4 @@ control.monitor.positionprotocol positionprotocol
 control.monitor.emitter emitter
 control.monitor.electionprotocol electionprotocol
 
-control.monitor.time_slow 20
+control.monitor.time_slow 5
