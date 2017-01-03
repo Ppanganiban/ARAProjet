@@ -1,10 +1,10 @@
-N 4
+N 100
 LATENCY 1
 DELTA LATENCY * 2
-SEED 14
-SCOPE 150
-DIMX 300
-DIMY 300
+SEED 15
+SCOPE 50
+DIMX 1000
+DIMY 1000
 
 ####################################################
 
@@ -17,7 +17,7 @@ protocol.positionprotocol PositionProtocolImpl
 protocol.positionprotocol.maxX DIMX
 protocol.positionprotocol.maxY DIMY
 protocol.positionprotocol.maxSpeed 1
-protocol.positionprotocol.timePause 200
+protocol.positionprotocol.timePause 500
 
 protocol.emitter EmitterImpl
 protocol.emitter.scope SCOPE
