@@ -1,4 +1,3 @@
-import javax.swing.text.Position;
 
 import peersim.config.Configuration;
 import peersim.core.CommonState;
@@ -7,9 +6,10 @@ import peersim.core.Node;
 public class PositionProtocolImpl implements PositionProtocol{
 	private final int protocol_id;
 
-	private static int maxSpeed;
+	private static int maxSpeed, minSpeed;
 	private static double maxX;
 	private static double maxY;
+
 	private static int timePause;
 
 	private double xDest, yDest;
@@ -23,18 +23,18 @@ public class PositionProtocolImpl implements PositionProtocol{
 		protocol_id=Configuration.lookupPid(tmp[tmp.length-1]);
 
 		maxSpeed = Configuration.getInt(prefix+".maxSpeed");
+    minSpeed = Configuration.getInt(prefix+".minSpeed");
 		timePause = Configuration.getInt(prefix+".timePause");
 		maxX = Configuration.getDouble(prefix+".maxX");
 		maxY = Configuration.getDouble(prefix+".maxY");
 
 		x = CommonState.r.nextDouble() * maxX;
 		y = CommonState.r.nextDouble() * maxY;
-
 		xDest = CommonState.r.nextDouble() * maxX;
 		yDest = CommonState.r.nextDouble() * maxY;
 
-		currSpeed = (int)(CommonState.r.nextDouble() * maxSpeed + 1);
-		waitTime = timePause;
+		currSpeed = (int)(CommonState.r.nextDouble() * (maxSpeed - minSpeed) ) + minSpeed;
+		waitTime = 0;
 		
 	}
 
@@ -48,9 +48,8 @@ public class PositionProtocolImpl implements PositionProtocol{
 
 			pp.xDest = CommonState.r.nextDouble() * maxX;
 			pp.yDest = CommonState.r.nextDouble() * maxY;
-
-			pp.currSpeed = (int)(CommonState.r.nextDouble() * maxSpeed + 1);
-			pp.waitTime = timePause;
+			pp.currSpeed = (int)(CommonState.r.nextDouble() * (maxSpeed - minSpeed) ) + minSpeed;
+			pp.waitTime = 0;
 			
 		}
 		catch( CloneNotSupportedException e ) {} // never happens
@@ -65,8 +64,8 @@ public class PositionProtocolImpl implements PositionProtocol{
 		}
 		if(pos.waitTime == 0){
 			//we compute the new position of x if it is not at destination
-			if(pos.x != pos.xDest && pos.y != pos.yDest){
-				double px, py, ph;
+			if(pos.x != pos.xDest || pos.y != pos.yDest){
+			  double px, py, ph;
 				double dx, dy;
 
 				//Pythagore theorem
@@ -75,8 +74,7 @@ public class PositionProtocolImpl implements PositionProtocol{
 				ph = Math.sqrt(Math.pow(px, 2) + Math.pow(py, 2));
 
 				//Thales theorem
-				dx = currSpeed * px / ph;
-
+				dx = (pos.currSpeed/1000) * px / ph;
 				if (pos.x > pos.xDest)
 					if(pos.x - dx > pos.xDest)
 					  pos.x -= dx;
@@ -88,7 +86,7 @@ public class PositionProtocolImpl implements PositionProtocol{
 					else
 					  pos.x = pos.xDest;
 				
-				dy = pos.currSpeed * py / ph;
+				dy = (pos.currSpeed/1000) * py / ph;
 
 				if (pos.y > pos.yDest)
 					if(pos.y - dy > pos.yDest)
@@ -105,7 +103,7 @@ public class PositionProtocolImpl implements PositionProtocol{
 			else{
 			  pos.xDest = CommonState.r.nextDouble() * maxX;
 			  pos.yDest = CommonState.r.nextDouble() * maxY;
-			  pos.currSpeed = (int)(CommonState.r.nextDouble() * maxSpeed + 1);
+			  pos.currSpeed = (int)(CommonState.r.nextDouble() * (maxSpeed - minSpeed) ) + minSpeed;
 			  pos.waitTime = timePause;
 			}
 		}else{
