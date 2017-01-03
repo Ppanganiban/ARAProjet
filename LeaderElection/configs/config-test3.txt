@@ -1,31 +1,25 @@
-N 20
-LATENCY 1
-DELTA LATENCY * 2
-
-####################################################
-
 simulation.endtime 10000
-random.seed 7
+random.seed 6
 
-network.size N
+network.size 6
 
 
 protocol.positionprotocol PositionProtocolImpl
-protocol.positionprotocol.maxX 700
-protocol.positionprotocol.maxY 700
+protocol.positionprotocol.maxX 500
+protocol.positionprotocol.maxY 500
 protocol.positionprotocol.maxSpeed 1
 protocol.positionprotocol.timePause 100
 
 protocol.emitter EmitterImpl
-protocol.emitter.scope 50
-protocol.emitter.latency LATENCY
+protocol.emitter.scope 200
+protocol.emitter.latency 1
 protocol.emitter.electionprotocol electionprotocol
 protocol.emitter.positionprotocol positionprotocol
 
 protocol.electionprotocol ElectionProtocolImpl
 protocol.electionprotocol.positionprotocol positionprotocol
 protocol.electionprotocol.emitter emitter
-protocol.electionprotocol.delta DELTA
+
 
 
 control.monitor Monitor

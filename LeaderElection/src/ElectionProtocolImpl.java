@@ -14,9 +14,11 @@ public class ElectionProtocolImpl implements ElectionProtocol{
   private static final int NONE = -1;
 
   private static final String PAR_EMITTER = "emitter";
+  private static final String PAR_DELTA = "delta";
 
-  private static final int DELTA = 3;
-  
+  private static int DELTANEIGHBOR;
+  private static int DELTALEADER;
+
   private final int protocol_id;
   private final int emitter_pid;
 
@@ -32,7 +34,6 @@ public class ElectionProtocolImpl implements ElectionProtocol{
   private boolean pendingAck;
   private MessContent ackContent;
 
-  private long refToLeader;
   private List<Long> neighbors;
   private List<Long> waitedNeighbors;
   private HashMap<Long, Integer> timerNeighbor;
@@ -40,11 +41,15 @@ public class ElectionProtocolImpl implements ElectionProtocol{
   private MessageLeader pendingMsgLeader;
   private long idPendingMsgLeader;
 
+  private long parentToLeader;
+  private int timerLeader;
+
   public ElectionProtocolImpl(String prefix) {
     String tmp[]= prefix.split("\\.");
     protocol_id = Configuration.lookupPid(tmp[tmp.length-1]);
     emitter_pid = Configuration.getPid(prefix+"."+PAR_EMITTER);
-
+    DELTANEIGHBOR = Configuration.getInt(prefix+"."+PAR_DELTA) + 1;
+    DELTALEADER = (DELTANEIGHBOR - 1) * Network.size() + 1;
     inElection = false;
     idLeader = NONE;
     valueLeader = NONE;
@@ -55,7 +60,6 @@ public class ElectionProtocolImpl implements ElectionProtocol{
     currElec = null;
     srcElec = NONE;
     parent = null;
-    refToLeader = NONE;
 
     neighbors = new ArrayList<Long>();
     waitedNeighbors = new ArrayList<Long>();
@@ -64,6 +68,8 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 
     pendingMsgLeader = null;
     idPendingMsgLeader = NONE;
+    timerLeader = DELTALEADER;
+    parentToLeader = NONE;
   }
 
   public Object clone(){
@@ -76,8 +82,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
       ep.myValue = (int) (CommonState.r.nextDouble() * MAXVAL);
       ep.ackContent = new MessContent(currElec, NONE, NONE);
       ep.pendingMsgLeader = null;
-      ep.refToLeader = NONE;
-      ep.idPendingMsgLeader = NONE;
+
     }
     catch( CloneNotSupportedException e ) {} // never happens
     return ep;
@@ -140,7 +145,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
             System.out.println("Node "+node.getID()+" new neighbor node "+mess.getIdSrc());
             emitter.emit(node, new MessageLeader(node.getID(), mess.getIdSrc(), new MessContent(null, ep.idLeader, ep.valueLeader), protocol_id) );
           }
-          ep.timerNeighbor.put(mess.getIdSrc(), DELTA);
+          ep.timerNeighbor.put(mess.getIdSrc(), DELTANEIGHBOR);
         }
 
         else if(mess instanceof MessageElection){
@@ -162,7 +167,6 @@ public class ElectionProtocolImpl implements ElectionProtocol{
             ep.waitedNeighbors.addAll(ep.neighbors);
             ep.waitedNeighbors.remove(ep.parent.getID());
             ep.ackContent = new MessContent(idelec, node.getID(), ep.myValue);
-            ep.refToLeader = NONE;
 
             System.out.println(ep.currElec+" Node "+node.getID()+" is a child of Node "+ep.parent.getIndex());
 
@@ -217,7 +221,8 @@ public class ElectionProtocolImpl implements ElectionProtocol{
             System.out.println("Node "+node.getID() + " :: NEW LEADER "+content);
             ep.idLeader = content.idLid;
             ep.valueLeader = content.valueLid;
-            ep.refToLeader = mess.getIdSrc(); //the src node of the msg will be our reference to the leader
+            ep.timerLeader = DELTALEADER;
+            ep.parentToLeader = NONE;
             ep.inElection = false;
             ep.pendingAck = false;
             ep.currElec = null;
@@ -243,8 +248,8 @@ public class ElectionProtocolImpl implements ElectionProtocol{
               if(ep.valueLeader < content.valueLid){
                 ep.idLeader = content.idLid;
                 ep.valueLeader = content.valueLid;
-                ep.refToLeader = mess.getIdSrc();
-
+                ep.timerLeader = DELTALEADER;
+                ep.parentToLeader = NONE;
                 System.out.println(" new leader ");
                 MessageLeader prop;
                 for(int i = 0; i < ep.neighbors.size(); i++){
@@ -268,7 +273,33 @@ public class ElectionProtocolImpl implements ElectionProtocol{
             }
             
           }
-        }  
+        }
+        else if (mess instanceof MessageProbeLeader){
+          long problid = (long) mess.getContent();
+          System.out.print("Node "+node.getID() + " :: RECV PROBE LEADER "+problid+" from node "+mess.getIdSrc()+" : ");
+          if(ep.idLeader == problid){
+            if(ep.parentToLeader == NONE){
+              ep.parentToLeader = mess.getIdSrc();
+            }
+            if (ep.parentToLeader == mess.getIdSrc()){
+              MessageProbeLeader m;
+              ep.timerLeader = DELTALEADER;
+              System.out.println(" PROPAGATE");
+              for (int i = 0; i < ep.neighbors.size(); i++){
+                if(ep.parentToLeader != ep.neighbors.get(i)){
+                  m = new MessageProbeLeader(node.getID(),
+                                            ep.neighbors.get(i),
+                                            problid,
+                                            protocol_id);
+                  emitter.emit(node,m);
+                }
+              }
+            }
+            else{
+              System.out.println(" NOT MY PARENT "+ep.parentToLeader);
+            }
+          }
+        }
       }
     }
   }
@@ -287,7 +318,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
     if(ep.idLeader == NONE){
       System.out.println("NO LEADER");
       ep.idLeader = node.getID();
-      ep.refToLeader = node.getID();
+      ep.timerLeader = DELTALEADER;
       ep.valueLeader = ep.myValue;
       ep.ackContent.idLid = node.getID();
       ep.ackContent.valueLid = ep.myValue;
@@ -321,15 +352,14 @@ public class ElectionProtocolImpl implements ElectionProtocol{
               ep.idPendingMsgLeader = NONE;
               ep.pendingMsgLeader = null;
             }
-          //If it was the leader we triger a new election
-            //if(entry.getKey() == ep.idLeader){
-              //System.out.println("LEADER "+entry.getKey()+" DISCONNECT");
-              //ep.triggerElection(node);
-            //}
-            if (entry.getKey() == ep.refToLeader){
-              System.out.println("Node "+node.getID()+" loses leader reference node "+ep.refToLeader);
-              ep.triggerElection(node);
+            if(ep.parentToLeader == entry.getKey()){
+              ep.parentToLeader = NONE;
             }
+          //If it was the leader we triger a new election
+           /*if(entry.getKey() == ep.idLeader){
+              System.out.println("LEADER "+entry.getKey()+" DISCONNECT");
+              ep.triggerElection(node);
+            }*/
           }    
         }
       }
@@ -344,7 +374,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
         if(ep.valueLeader < content.valueLid){
           ep.idLeader = content.idLid;
           ep.valueLeader = content.valueLid;
-          ep.refToLeader = ep.pendingMsgLeader.getIdSrc();
+          ep.timerLeader = DELTALEADER;
           System.out.println(" new leader ");
           MessageLeader prop;
           for(int i = 0; i < ep.neighbors.size(); i++){
@@ -359,6 +389,19 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 
         ep.pendingMsgLeader = null;
         ep.idPendingMsgLeader = NONE;
+      }
+      if(ep.idLeader == node.getID()){
+        ep.timerLeader = DELTALEADER;
+        System.out.println("Node "+node.getID()+" is leader. SEND PROBE");
+        emitter.emit(node, new MessageProbeLeader(node.getID(), Emitter.ALL, node.getID(), protocol_id));
+      }else{
+        if(ep.timerLeader <= 0){
+          System.out.println("Node "+node.getID()+ " is deconnected to leader "+ep.idLeader);
+          ep.triggerElection(node);
+        }else{
+          System.out.println("Node "+node.getID()+ " :: timer "+ep.timerLeader+" to leader "+ep.idLeader);
+          ep.timerLeader --;
+        }
       }
     }
     else{
@@ -384,13 +427,14 @@ public class ElectionProtocolImpl implements ElectionProtocol{
     System.out.println(idelec+" Node "+n.getID()+" triggers an election");
     ep.idLeader = n.getID();
     ep.valueLeader = ep.myValue;
+    ep.timerLeader = DELTALEADER;
+    ep.parentToLeader = NONE;
     ep.inElection = true;
     ep.currElec = idelec;
     ep.srcElec = n.getID();
     ep.myNumElec ++;
     
     ep.parent = null;
-    ep.refToLeader = n.getID();
     ep.waitedNeighbors = new ArrayList<Long>();
     ep.waitedNeighbors.addAll(ep.neighbors);
     ep.ackContent.idElec = idelec;
@@ -417,8 +461,8 @@ public class ElectionProtocolImpl implements ElectionProtocol{
       if(node.getID() == ep.srcElec){
         System.out.println(ep.currElec+" Node "+node.getID()+ " root broadcast Leader "+ep.ackContent);            
         ep.idLeader = ep.ackContent.idLid;
-        ep.refToLeader = node.getID();
         ep.valueLeader = ep.ackContent.valueLid;
+        ep.timerLeader = DELTALEADER;
         ep.inElection = false;
         ep.pendingAck = false;
         ep.currElec = null;
@@ -432,7 +476,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
         System.out.println(ep.currElec+" Node "+node.getID()+ " sends ack "+ep.ackContent+" to node "+ep.parent.getID());
         ep.pendingAck = true;
         emitter.emit(node, new MessageAck(node.getID(), parent.getID(), ep.ackContent, protocol_id));
-      }      
+      }
     }
   }
 

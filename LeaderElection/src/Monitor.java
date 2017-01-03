@@ -147,7 +147,7 @@ public class Monitor extends JPanel implements Control {
   }
   @Override
   public boolean execute() {
-
+    System.out.println("****************************");
     if(frame == null){
       init();
     }
