@@ -1,30 +1,47 @@
-simulation.endtime 10000
-random.seed 5
+N 40
+SEED 555
 
-network.size 3
+LATENCY 1 #ms
+DELTA (LATENCY) * 2 #ms
+SCOPE 50 #m
+DIMX 500 #m
+DIMY 500 #m
+ENDTIME 100000 #ms
+MAXSPEED 50 #m/s
+MINSPEED 50 #m/s
 
+####################################################
+
+simulation.endtime ENDTIME
+random.seed SEED
+
+network.size N
 
 protocol.positionprotocol PositionProtocolImpl
-protocol.positionprotocol.maxX 500
-protocol.positionprotocol.maxY 500
-protocol.positionprotocol.maxSpeed 1
-protocol.positionprotocol.timePause 500
+protocol.positionprotocol.maxX DIMX
+protocol.positionprotocol.maxY DIMY
+protocol.positionprotocol.maxSpeed MAXSPEED
+protocol.positionprotocol.minSpeed MINSPEED
+
+protocol.positionprotocol.timePause 1000
 
 protocol.emitter EmitterImpl
-protocol.emitter.scope 200
-protocol.emitter.latency 1
+protocol.emitter.scope SCOPE
+protocol.emitter.latency LATENCY
 protocol.emitter.electionprotocol electionprotocol
 protocol.emitter.positionprotocol positionprotocol
 
 protocol.electionprotocol ElectionProtocolImpl
+protocol.electionprotocol.positionprotocol positionprotocol
 protocol.electionprotocol.emitter emitter
+protocol.electionprotocol.delta DELTA
 
 control.monitor Monitor
 control.monitor.from 0
-control.monitor.until 10000
+control.monitor.until ENDTIME
 control.monitor.step 1
 control.monitor.positionprotocol positionprotocol
 control.monitor.emitter emitter
 control.monitor.electionprotocol electionprotocol
 
-control.monitor.time_slow 10
+control.monitor.time_slow 1

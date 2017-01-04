@@ -1,6 +1,12 @@
-
+/**
+ * IDElection represents the id of an election.
+ * It is composed by a sequence number and the id of the node source.
+ * @author PAUL PANGANIBAN & THOMAS MAGALHAES
+ *
+ */
 public class IDElection {
-	private long num, id;
+	private long num;
+	private long id;
 	private int nbHop;
 
 	public long getNum() {

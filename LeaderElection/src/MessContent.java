@@ -1,4 +1,9 @@
-
+/**
+ * MessContent represents the content of an ACK and Leader messages
+ * It contains the id of current election and the informations of one leader.
+ * @author PAUL PANGANIBAN & THOMAS MAGALHAES
+ *
+ */
 public class MessContent {
 	public IDElection idElec;
 	public long idLid;
