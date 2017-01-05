@@ -195,14 +195,18 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 
 
         /* 
-         * We participate to it only if we not in election process.
-         * If it's not the case, we do not respond in order to finish the current election.
-         * We will be notify by its leader during its leader phase (by a LeaderMessage).
+         * We participate to it if we are not in election process and
+         * the election is about the of our leader defunt leader. If it's not
+         * the case, we do not respond in order to finish the current election.
+         * We will be notify by its leader during its leader phase
+         * by a LeaderMessage.
          */
         else if(mess instanceof MessageElection){
           IDElection idelec = (IDElection)mess.getContent();
           //System.out.println("Node "+node.getID()+" :: MSG ELECTION rcv :"+idelec+" from Node "+mess.getIdSrc() + " nbHop:"+idelec.getNbHop());          
-          if (!ep.inElection){
+          if ((!ep.inElection && idelec.getOldLeader() == ep.idLeader)
+              || idelec.isHigherThan(ep.currElec)){
+
             //System.out.println("Node "+node.getID()+" :: participates to this election :"+idelec+" prev: "+ep.currElec);
             ep.currElec       = idelec;
             ep.srcElec        = idelec.getId();
@@ -229,7 +233,8 @@ public class ElectionProtocolImpl implements ElectionProtocol{
                                          ep.waitedNeighbors.get(i),
                                          new IDElection(idelec.getNum(),
                                                          idelec.getId(),
-                                                         idelec.getNbHop() + 1),
+                                                         idelec.getNbHop() + 1,
+                                                         idelec.getOldLeader()),
                                          protocol_id);
               emitter.emit(node, prop);
             }
@@ -520,7 +525,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
     EmitterImpl em;
 
     ep      = ((ElectionProtocolImpl) n.getProtocol(protocol_id));
-    idelec  = new IDElection(ep.getMyNumElec(), n.getID(), 1);
+    idelec  = new IDElection(ep.getMyNumElec(), n.getID(), 1, ep.idLeader);
 
     //System.out.println(idelec+" Node "+n.getID()+" triggers an election");
     ep.idLeader         = n.getID();

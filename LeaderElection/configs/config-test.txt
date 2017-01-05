@@ -1,14 +1,14 @@
-N 40
+N 60
 SEED 555
 
 LATENCY 1 #ms
 DELTA (LATENCY) * 2 #ms
-SCOPE 50 #m
+SCOPE 100 #m
 DIMX 500 #m
 DIMY 500 #m
 ENDTIME 100000 #ms
-MAXSPEED 50 #m/s
-MINSPEED 50 #m/s
+MAXSPEED 100 #m/s
+MINSPEED 100 #m/s
 
 ####################################################
 

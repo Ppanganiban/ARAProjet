@@ -8,6 +8,7 @@ public class IDElection {
 	private long num;
 	private long id;
 	private int nbHop;
+	private long oldLeader;
 
 	public long getNum() {
 		return num;
@@ -17,10 +18,11 @@ public class IDElection {
 		return id;
 	}
 
-	public IDElection(long num, long id, int nbHop){
+	public IDElection(long num, long id, int nbHop, long oldLeader){
 		this.num = num;
 		this.id = id;
 		this.nbHop = nbHop;
+		this.oldLeader = oldLeader;
 	}
 	
 	public boolean isHigherThan(IDElection idElec){
@@ -63,5 +65,13 @@ public class IDElection {
 
   public void setNbHop(int nbHop) {
     this.nbHop = nbHop;
+  }
+
+  public long getOldLeader() {
+    return oldLeader;
+  }
+
+  public void setOldLeader(long oldLeader) {
+    this.oldLeader = oldLeader;
   }
 }
