@@ -6,11 +6,14 @@ import peersim.config.Configuration;
 import peersim.core.CommonState;
 import peersim.core.Network;
 import peersim.core.Node;
+import peersim.edsim.EDSimulator;
 
 public class ElectionProtocolImpl implements ElectionProtocol{
   private static final int MAXVAL         = 2000;
   private static final int NONE           = -1;
   private static final String PAR_EMITTER = "emitter";
+  private static final String PAR_POSITION   = "position";
+
   private static final String PAR_DELTA   = "delta";
 
   /**Timer for one communication between two nodes*/
@@ -24,6 +27,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
 
   private final int protocol_id;
   private final int emitter_pid;
+  private final int position_pid;
 
   /**Local number of sequence for election*/
   private long myNumElec;
@@ -75,6 +79,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
     String tmp[]  = prefix.split("\\.");
     protocol_id   = Configuration.lookupPid(tmp[tmp.length-1]);
     emitter_pid   = Configuration.getPid(prefix+"."+PAR_EMITTER);
+    position_pid  = Configuration.getPid(prefix+"."+PAR_POSITION);
 
     DELTANEIGHBOR = Configuration.getInt(prefix+"."+PAR_DELTA) + 1;
     DELTACHILD    = DELTANEIGHBOR * Network.size() + 1;
@@ -385,6 +390,8 @@ public class ElectionProtocolImpl implements ElectionProtocol{
   public void checkNodeState(Node node){
     EmitterImpl emitter     = (EmitterImpl) node.getProtocol(emitter_pid);
     ElectionProtocolImpl ep = (ElectionProtocolImpl) node.getProtocol(protocol_id);
+    
+    EDSimulator.add(0, null, node, position_pid);
 
     //First call
     if(ep.idLeader == NONE){

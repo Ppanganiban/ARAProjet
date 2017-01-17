@@ -151,17 +151,6 @@ public class Monitor extends JPanel implements Control {
     if(frame == null){
       init();
     }
-
-    //Check neighbors and if there is something to do
-    for(int i = 0; i < Network.size(); i++){
-      EDSimulator.add(0, null, Network.get(i), election_pid);
-    }
-    this.repaint();
-
-    //Compute positions
-    for(int i = 0; i < Network.size(); i++){
-      EDSimulator.add(0, null, Network.get(i), position_pid);
-    }
     this.repaint();
     try {
       int nb_milisec=(int)time_slow;

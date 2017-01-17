@@ -1,4 +1,5 @@
 import peersim.config.Configuration;
+import peersim.core.CommonState;
 import peersim.core.Network;
 import peersim.core.Node;
 import peersim.edsim.EDSimulator;
@@ -38,7 +39,7 @@ public class EmitterImpl implements Emitter{
         ph = Math.sqrt(Math.pow(px, 2) + Math.pow(py, 2));
         
         if(ph <= scope){
-          EDSimulator.add(latency, m, node, election_pid);
+          EDSimulator.add((long) (CommonState.r.nextDouble() * latency), m, node, election_pid);
         }
       }
     }
