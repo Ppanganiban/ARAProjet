@@ -45,6 +45,10 @@ public class ElectionProtocolImpl implements ElectionProtocol{
   private long valueLeader;
   /**ID of the current election*/
   private IDElection currElec;
+  public IDElection getCurrElec() {
+    return currElec;
+  }
+
   /**ID of the source node of the current election*/
   //We need this variable as a tmp of the id in var currElec.
   //The src elec can change when we lost connection with our parent
@@ -74,6 +78,9 @@ public class ElectionProtocolImpl implements ElectionProtocol{
    * 0 if we didn't have a ProbeLeaderMessage then we trigger a new election.
    * Else time to wait.*/
   private int timerLeader;
+
+  private double sentMSG; //Use for performance computing
+
 
   public ElectionProtocolImpl(String prefix) {
     String tmp[]  = prefix.split("\\.");
@@ -243,6 +250,9 @@ public class ElectionProtocolImpl implements ElectionProtocol{
                                          protocol_id);
               emitter.emit(node, prop);
             }
+            ep.sentMSG += (ep.neighbors.size()-1);
+
+            
           }
         }
 
@@ -312,6 +322,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
                 emitter.emit(node, prop);
               }
             }
+            ep.sentMSG += (ep.neighbors.size()-1);
           }
 
           //It's a concurrent election
@@ -340,6 +351,8 @@ public class ElectionProtocolImpl implements ElectionProtocol{
                     emitter.emit(node, prop);
                   }
                 }
+                ep.sentMSG += (ep.neighbors.size()-1);
+
               }else{
                 //System.out.println(" stay the same");
               }
@@ -589,6 +602,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
         ep.parent       = null;
         ep.pendingAck   = false;
 
+        ep.sentMSG += ep.neighbors.size();
         emitter.emit(node, new MessageLeader(node.getID(), Emitter.ALL, ep.ackContent, protocol_id));
       }
       else if (!ep.pendingAck){
@@ -611,4 +625,11 @@ public class ElectionProtocolImpl implements ElectionProtocol{
     return result;
   }
 
+  public double getSentMSG() {
+    return sentMSG;
+  }
+
+  public void setSentMSG(double sentMSG) {
+    this.sentMSG = sentMSG;
+  }
 }

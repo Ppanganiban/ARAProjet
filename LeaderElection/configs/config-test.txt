@@ -1,14 +1,16 @@
-N 50
-SEED 555
+N 100
+SEED 16
 
 LATENCY 1 #ms
 DELTA (LATENCY) * 2 #ms
-SCOPE 60 #m
-DIMX 1000 #m
-DIMY 1000 #m
-ENDTIME 100000 #ms
-MAXSPEED 100 #m/s
-MINSPEED 100 #m/s
+SCOPE 200 #m
+DIMX 2000 #m
+DIMY 2000 #m
+MAXSPEED 30 #m/s
+MINSPEED 10 #m/s
+TIMEPAUSE 150000 #ms
+
+ENDTIME 10000 #ms
 
 TIME_SLOW 1
 
@@ -27,7 +29,7 @@ protocol.positionprotocol.maxX DIMX
 protocol.positionprotocol.maxY DIMY
 protocol.positionprotocol.maxSpeed MAXSPEED
 protocol.positionprotocol.minSpeed MINSPEED
-protocol.positionprotocol.timePause 1000
+protocol.positionprotocol.timePause TIMEPAUSE
 
 protocol.emitter EmitterImpl
 protocol.emitter.scope SCOPE
@@ -55,3 +57,18 @@ control.controlElection.until ENDTIME
 control.controlElection.step STEP_ELECTION
 control.controlElection.electionprotocol electionprotocol
 control.controlElection.time_slow TIME_SLOW * STEP_ELECTION
+
+protocol.perf PerformanceProtocol
+protocol.perf.electionprotocol electionprotocol
+
+control.controlperf ControlPerf
+control.controlperf.perfprotocol perf
+control.controlperf.from 0
+control.controlperf.until ENDTIME
+control.controlperf.step 1
+control.controlperf.time_slow 1
+
+control.endcontroler EndController
+control.endcontroler.perfprotocol perf
+control.endcontroler.at -1
+control.endcontroler.FINAL
