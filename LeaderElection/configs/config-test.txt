@@ -1,21 +1,22 @@
-N 100
-SEED 16
+N 					120
+SEED 				555
 
-LATENCY 1 #ms
-DELTA (LATENCY) * 2 #ms
-SCOPE 200 #m
-DIMX 2000 #m
-DIMY 2000 #m
-MAXSPEED 30 #m/s
-MINSPEED 10 #m/s
-TIMEPAUSE 150000 #ms
+LATENCY 			1 #ms
+DELTA 				(LATENCY) * 2 #ms
+SCOPE 				200 #m
+DIMX 				2000 #m
+DIMY 				2000 #m
+MAXSPEED 			30 #m/s
+MINSPEED 			10 #m/s
+TIMEPAUSE 			150000 #ms
 
-ENDTIME 10000 #ms
+ENDTIME 			10000 #ms
 
-TIME_SLOW 1
+TIME_SLOW_MONITOR 	33
+STEP_MONITOR 		33
 
-STEP_MONITOR 1
-STEP_ELECTION 1
+TIME_SLOW_ELECTION 	1
+STEP_ELECTION 		1
 
 ####################################################
 
@@ -24,51 +25,64 @@ random.seed SEED
 
 network.size N
 
-protocol.positionprotocol PositionProtocolImpl
-protocol.positionprotocol.maxX DIMX
-protocol.positionprotocol.maxY DIMY
-protocol.positionprotocol.maxSpeed MAXSPEED
-protocol.positionprotocol.minSpeed MINSPEED
-protocol.positionprotocol.timePause TIMEPAUSE
+protocol.positionprotocol 						PositionProtocolImpl
+protocol.positionprotocol.maxX 					DIMX
+protocol.positionprotocol.maxY 					DIMY
+protocol.positionprotocol.maxSpeed 				MAXSPEED
+protocol.positionprotocol.minSpeed 				MINSPEED
+protocol.positionprotocol.timePause 			TIMEPAUSE
 
-protocol.emitter EmitterImpl
-protocol.emitter.scope SCOPE
-protocol.emitter.latency LATENCY
-protocol.emitter.electionprotocol electionprotocol
-protocol.emitter.positionprotocol positionprotocol
 
-protocol.electionprotocol ElectionProtocolImpl
-protocol.electionprotocol.position positionprotocol
-protocol.electionprotocol.emitter emitter
-protocol.electionprotocol.delta DELTA
+protocol.emitter 								EmitterImpl
+protocol.emitter.scope 							SCOPE
+protocol.emitter.latency 						LATENCY
+protocol.emitter.electionprotocol 				electionprotocol
+protocol.emitter.positionprotocol 				positionprotocol
 
-control.monitor Monitor
-control.monitor.from 0
-control.monitor.until ENDTIME
-control.monitor.step STEP_MONITOR
-control.monitor.positionprotocol positionprotocol
-control.monitor.emitter emitter
-control.monitor.electionprotocol electionprotocol
-control.monitor.time_slow TIME_SLOW * STEP_MONITOR
 
-control.controlElection ControlElection
-control.controlElection.from 0
-control.controlElection.until ENDTIME
-control.controlElection.step STEP_ELECTION
-control.controlElection.electionprotocol electionprotocol
-control.controlElection.time_slow TIME_SLOW * STEP_ELECTION
+protocol.electionprotocol 						ElectionProtocolImpl
+protocol.electionprotocol.position 				positionprotocol
+protocol.electionprotocol.emitter 				emitter
+protocol.electionprotocol.delta 				DELTA
 
-protocol.perf PerformanceProtocol
-protocol.perf.electionprotocol electionprotocol
 
-control.controlperf ControlPerf
-control.controlperf.perfprotocol perf
-control.controlperf.from 0
-control.controlperf.until ENDTIME
-control.controlperf.step 1
-control.controlperf.time_slow 1
 
-control.endcontroler EndController
-control.endcontroler.perfprotocol perf
-control.endcontroler.at -1
+################################### CONTROL #####
+
+#control.monitor 								Monitor
+#control.monitor.from 							0
+#control.monitor.until 							ENDTIME * STEP_MONITOR
+#control.monitor.step 							STEP_MONITOR
+#control.monitor.positionprotocol 				positionprotocol
+#control.monitor.emitter 						emitter
+#control.monitor.electionprotocol 				electionprotocol
+#control.monitor.time_slow 						TIME_SLOW_MONITOR
+
+
+control.controlElection 						ControlElection
+control.controlElection.from 					0
+control.controlElection.until					ENDTIME
+control.controlElection.step 					STEP_ELECTION
+control.controlElection.electionprotocol 		electionprotocol
+control.controlElection.time_slow 				TIME_SLOW_ELECTION
+
+
+
+################################### PERFORMANCE #####
+
+protocol.perf 									PerformanceProtocol
+protocol.perf.electionprotocol 					electionprotocol
+
+
+control.controlperf 							ControlPerf
+control.controlperf.perfprotocol 				perf
+control.controlperf.from 						0
+control.controlperf.until 						ENDTIME
+control.controlperf.step 						1
+control.controlperf.time_slow 					1
+
+
+control.endcontroler 							EndController
+control.endcontroler.perfprotocol 				perf
+control.endcontroler.at 						-1
 control.endcontroler.FINAL

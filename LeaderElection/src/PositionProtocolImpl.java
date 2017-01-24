@@ -22,7 +22,7 @@ public class PositionProtocolImpl implements PositionProtocol{
 		protocol_id=Configuration.lookupPid(tmp[tmp.length-1]);
 
 		maxSpeed = Configuration.getInt(prefix+".maxSpeed");
-    minSpeed = Configuration.getInt(prefix+".minSpeed");
+		minSpeed = Configuration.getInt(prefix+".minSpeed");
 		timePause = Configuration.getInt(prefix+".timePause");
 		maxX = Configuration.getDouble(prefix+".maxX");
 		maxY = Configuration.getDouble(prefix+".maxY");

@@ -1,3 +1,5 @@
+import java.util.HashMap;
+
 import peersim.config.Configuration;
 import peersim.core.CommonState;
 import peersim.core.Control;
@@ -18,27 +20,42 @@ public class EndController implements Control{
     double T = 0; //Election time
     double L = 0; //Average of leader during the experience
     double M = 0; //Message overhead
-   
+
+    HashMap<IDElection, Boolean> allElection = new HashMap<IDElection, Boolean>();
     PerformanceProtocol perf;
     Node node;
-    
+ 
+    int nbNodeDidElection = 0;
+
     for(int i = 0; i< Network.size(); i++){
       node = Network.get(i);
       perf = (PerformanceProtocol) node.getProtocol(perf_pid);
       F += perf.getTimeWithoutLeader();
-      R += perf.getNbElection();
+
+      R += perf.getTimeInElection();
+ 
+      if(perf.getAllElection().size() > 0){
+    	  nbNodeDidElection ++;
+          M += (perf.getMessageOverhead()/perf.getAllElection().size());
+
+          T += (perf.getTimeInElection()/perf.getAllElection().size());
+          
+          allElection.putAll(perf.getAllElection());
+
+      }
+
       L += perf.getNbTimesLeader();
-      M += perf.getMessageOverhead();
+ 
     }
-    
-    T = F/R;
-    M /= R;
+ 
+    M /= nbNodeDidElection;
+    T /= nbNodeDidElection;
 
     F /= Network.size();
-    R /= Network.size() * CommonState.getEndTime();
+    R = R / (Network.size() * CommonState.getEndTime());
     L /= CommonState.getEndTime();
 
-    System.out.println("Fraction of time without leader : "+F+"/"+CommonState.getEndTime()+" ms");
+    System.out.println("Fraction of time without leader : "+F+" ms");
     System.out.println("Election rate : "+R);
     System.out.println("Election Time : "+T+" ms");
     System.out.println("Average of leader : "+L);

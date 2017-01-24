@@ -214,17 +214,17 @@ public class ElectionProtocolImpl implements ElectionProtocol{
          * by a LeaderMessage.
          */
         else if(mess instanceof MessageElection){
-          IDElection idelec = (IDElection)mess.getContent();
+          DetailsElection details = (DetailsElection)mess.getContent();
           //System.out.println("Node "+node.getID()+" :: MSG ELECTION rcv :"+idelec+" from Node "+mess.getIdSrc() + " nbHop:"+idelec.getNbHop());          
-          if ((!ep.inElection && idelec.getOldLeader() == ep.idLeader)
-              || idelec.isHigherThan(ep.currElec)){
+          if ((!ep.inElection && details.getOldLeader() == ep.idLeader)
+              || details.getIdelec().isHigherThan(ep.currElec)){
 
             //System.out.println("Node "+node.getID()+" :: participates to this election :"+idelec+" prev: "+ep.currElec);
-            ep.currElec       = idelec;
-            ep.srcElec        = idelec.getId();
+            ep.currElec       = details.getIdelec();
+            ep.srcElec        = details.getIdelec().getId();
             ep.parent         = ep.getNodeWithId(mess.getIdSrc());
             ep.inElection     = true;
-            ep.ackContent     = new MessContent(idelec, node.getID(), ep.myValue);
+            ep.ackContent     = new MessContent(details.getIdelec(), node.getID(), ep.myValue);
             ep.pendingAck     = false;
             ep.numseqLeader   = 0;
             
@@ -239,20 +239,17 @@ public class ElectionProtocolImpl implements ElectionProtocol{
             MessageElection prop;
             for(int i = 0; i < ep.waitedNeighbors.size(); i++){
               ep.timerChild.put(ep.waitedNeighbors.get(i),
-                                DELTACHILD - (DELTANEIGHBOR * idelec.getNbHop()));
+                                DELTACHILD - (DELTANEIGHBOR * details.getNbHop()));
               //System.out.println(ep.currElec+" node "+node.getID()+ " propagates election to node "+ep.waitedNeighbors.get(i));
               prop = new MessageElection(node.getID(),
                                          ep.waitedNeighbors.get(i),
-                                         new IDElection(idelec.getNum(),
-                                                         idelec.getId(),
-                                                         idelec.getNbHop() + 1,
-                                                         idelec.getOldLeader()),
+                                         new DetailsElection(details.getIdelec(),
+                                        		 				details.getNbHop()+1,
+                                        		 				details.getOldLeader()),
                                          protocol_id);
               emitter.emit(node, prop);
             }
-            ep.sentMSG += (ep.neighbors.size()-1);
-
-            
+            ep.sentMSG ++;
           }
         }
 
@@ -450,11 +447,6 @@ public class ElectionProtocolImpl implements ElectionProtocol{
               ep.idPendingMsgLeader = NONE;
               ep.pendingMsgLeader = null;
             }
-            //If it was the leader we triger a new election
-            /*if(entry.getKey() == ep.idLeader){
-              //System.out.println("LEADER "+entry.getKey()+" DISCONNECT");
-              ep.triggerElection(node);
-            }*/
           }    
         }
       }
@@ -529,12 +521,14 @@ public class ElectionProtocolImpl implements ElectionProtocol{
    */
   public void triggerElection(Node n){
     IDElection idelec;
+    DetailsElection detail;
     ElectionProtocolImpl ep;
     MessageElection msg;
     EmitterImpl em;
 
     ep      = ((ElectionProtocolImpl) n.getProtocol(protocol_id));
-    idelec  = new IDElection(ep.getMyNumElec(), n.getID(), 1, ep.idLeader);
+    idelec  = new IDElection(ep.getMyNumElec(), n.getID());
+    detail	= new DetailsElection(idelec, 1, ep.idLeader);
 
     //System.out.println(idelec+" Node "+n.getID()+" triggers an election");
     ep.idLeader         = n.getID();
@@ -560,7 +554,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
     ep.ackContent.idLid     = n.getID();
     ep.ackContent.valueLid  = ep.myValue;
 
-    msg = new MessageElection(n.getID(), Emitter.ALL, idelec, protocol_id);
+    msg = new MessageElection(n.getID(), Emitter.ALL, detail, protocol_id);
     em  = ((EmitterImpl) n.getProtocol(emitter_pid));
     em.emit(n, msg);
   }
@@ -602,7 +596,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
         ep.parent       = null;
         ep.pendingAck   = false;
 
-        ep.sentMSG += ep.neighbors.size();
+        ep.sentMSG ++;
         emitter.emit(node, new MessageLeader(node.getID(), Emitter.ALL, ep.ackContent, protocol_id));
       }
       else if (!ep.pendingAck){
