@@ -602,6 +602,7 @@ public class ElectionProtocolImpl implements ElectionProtocol{
       else if (!ep.pendingAck){
         //System.out.println(ep.currElec+" Node "+node.getID()+ " sends ack "+ep.ackContent+" to node "+ep.parent.getID());
         ep.pendingAck = true;
+        ep.sentMSG ++;
         emitter.emit(node, new MessageAck(node.getID(), parent.getID(), ep.ackContent, protocol_id));
       }
     }

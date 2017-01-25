@@ -28,8 +28,8 @@ public class EndController implements Control{
 		double M = 0; //Message overhead
 		double eM = 0;
 
+    HashMap<IDElection, Boolean> allElection = new HashMap<IDElection, Boolean>();
 
-		HashMap<IDElection, Boolean> allElection = new HashMap<IDElection, Boolean>();
 		PerformanceProtocol perf;
 		Node node;
 
