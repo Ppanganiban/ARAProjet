@@ -2,15 +2,16 @@ JAVAC=javac
 JAVA=java
 JAR=jar
 
-CLASSPATH_DIR=~/Work/M2/ARAProjet/LeaderElection/lib
-CLASSPATH=-classpath $(CLASSPATH_DIR)/peersim-doclet.jar -classpath $(CLASSPATH_DIR)/djep-1.0.0.jar -classpath $(CLASSPATH_DIR)/jep-2.3.0.jar -classpath $(CLASSPATH_DIR)/peersim-1.0.5.jar
+LIB_DIR=~/Work/M2/ARAProjet/LeaderElection/lib
+LIBS=`find $(LIB_DIR) -name '*.jar'`
+CLASSPATH=-cp $(C_DIR)
 
 SRC_DIR=~/Work/M2/ARAProjet/LeaderElection/src
 MANIFEST_DIR=$(SRC_DIR)/META-INF
 MANIFEST=$(MANIFEST_DIR)/MANIFEST.MF
 SRCS=*.java
 OBJS=$(SRCS:.java=.class)
-C_DIR=obj
+C_DIR=~/Work/M2/ARAProjet/obj
 
 OUTPUT_JAR=ElectionLeader.jar
 
@@ -23,26 +24,14 @@ create-jar:
 	(cd $(C_DIR) && $(JAR) cmvf META-INF/MANIFEST.MF $(OUTPUT_JAR) `find . -name '*.class'`)
 
 extract-libs-jar:
-	(cd $(C_DIR) && cp $(CLASSPATH_DIR)/djep-1.0.0.jar .)
-	(cd $(C_DIR) && $(JAR) xf $(CLASSPATH_DIR)/djep-1.0.0.jar)
-	(cd $(C_DIR) && rm djep-1.0.0.jar)
-
-	(cd $(C_DIR) && cp $(CLASSPATH_DIR)/jep-2.3.0.jar .)
-	(cd $(C_DIR) && $(JAR) xf $(CLASSPATH_DIR)/jep-2.3.0.jar)
-	(cd $(C_DIR) && rm jep-2.3.0.jar)
-
-	(cd $(C_DIR) && cp $(CLASSPATH_DIR)/peersim-doclet.jar .)
-	(cd $(C_DIR) && $(JAR) xf $(CLASSPATH_DIR)/peersim-doclet.jar)
-	(cd $(C_DIR) && rm peersim-doclet.jar)
-
-	(cd $(C_DIR) && cp $(CLASSPATH_DIR)/peersim-1.0.5.jar .)
-	(cd $(C_DIR) && $(JAR) xf $(CLASSPATH_DIR)/peersim-1.0.5.jar)
-	(cd $(C_DIR) && rm peersim-1.0.5.jar)
+	cp $(LIB_DIR)/*.jar $(C_DIR)
+	(cd $(C_DIR) && find -name '*.jar' -exec $(JAR) xf {} \;)
+	rm $(C_DIR)/*.jar
 
 compile-class:
 	(cd $(SRC_DIR) && $(JAVAC) $(CLASSPATH) $(SRCS))
 
-move-to-c-dir: $(C_DIR) compile-class extract-libs-jar
+move-to-c-dir: $(C_DIR) extract-libs-jar compile-class
 	mv $(SRC_DIR)/$(OBJS) $(C_DIR)
 	cp -r $(MANIFEST_DIR) $(C_DIR)
 
