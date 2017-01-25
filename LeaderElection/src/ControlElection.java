@@ -1,4 +1,5 @@
 import peersim.config.Configuration;
+import peersim.core.CommonState;
 import peersim.core.Control;
 import peersim.core.Network;
 
@@ -17,7 +18,6 @@ public class ControlElection implements Control{
   @Override
   public boolean execute() {
     //Check neighbors and if there is something to do
-
     ElectionProtocolImpl ep;
     for(int i = 0; i < Network.size(); i++){
       ep = (ElectionProtocolImpl) Network.get(i).getProtocol(election_pid);

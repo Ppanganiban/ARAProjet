@@ -1,22 +1,23 @@
 N 					120
-SEED 				555
+SEED 				11
 
 LATENCY 			1 #ms
 DELTA 				(LATENCY) * 2 #ms
 SCOPE 				200 #m
 DIMX 				2000 #m
 DIMY 				2000 #m
-MAXSPEED 			30 #m/s
-MINSPEED 			10 #m/s
-TIMEPAUSE 			150000 #ms
+MAXSPEED 			3 #m/s
+MINSPEED 			1 #m/s
+TIMEPAUSE 			10000 #ms
 
-ENDTIME 			10000 #ms
+ENDTIME 			60000 * 10 #ms
 
 TIME_SLOW_MONITOR 	33
 STEP_MONITOR 		33
 
-TIME_SLOW_ELECTION 	1
+TIME_SLOW_ELECTION 	0
 STEP_ELECTION 		1
+
 
 ####################################################
 
@@ -51,8 +52,8 @@ protocol.electionprotocol.delta 				DELTA
 
 #control.monitor 								Monitor
 #control.monitor.from 							0
-#control.monitor.until 							ENDTIME * STEP_MONITOR
-#control.monitor.step 							STEP_MONITOR
+#control.monitor.until 							ENDTIME
+#control.monitor.step 							STEP_MONITOR * TIME_SLOW_MONITOR
 #control.monitor.positionprotocol 				positionprotocol
 #control.monitor.emitter 						emitter
 #control.monitor.electionprotocol 				electionprotocol
@@ -79,7 +80,7 @@ control.controlperf.perfprotocol 				perf
 control.controlperf.from 						0
 control.controlperf.until 						ENDTIME
 control.controlperf.step 						1
-control.controlperf.time_slow 					1
+control.controlperf.time_slow 					TIME_SLOW_ELECTION
 
 
 control.endcontroler 							EndController
