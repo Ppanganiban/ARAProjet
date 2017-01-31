@@ -82,25 +82,23 @@ public class EndController implements Control{
     eT = Math.sqrt(eT);
 		eF = Math.sqrt(eF);
 
-/*		
+		
 		System.out.println("Fraction of time without leader : "+F/CommonState.getEndTime());
     System.out.println("Standard Deviation : "+eF+"\n");
 		System.out.println("Election rate : "+R+"\n");
 		System.out.println("Election Time : "+T+" ms");
     System.out.println("Standard Deviation : "+eT+"\n");
 		System.out.println("Average of leader : "+L);
-    System.out.println("Standard Deviation : "+eL+"\n");
-		System.out.println("Message overhead : "+M);
     System.out.println("Standard Deviation : "+eM+"\n");
-*/
-		System.out.format("%-10.6f%n",F);
+
+/*		System.out.format("%-10.6f%n",F);
 		System.out.format("%-10.6f%n\n",eF);
 		System.out.format("%-10.6f%n\n",R);
 		System.out.format("%-10.6f%n",T);
 		System.out.format("%-10.6f%n\n",eT);
 		System.out.format("%-10.6f%n\n",L);
 		System.out.format("%-10.6f%n",M);
-		System.out.format("%-10.6f%n\n",eM);
+		System.out.format("%-10.6f%n\n",eM);*/
 		return false;
 	}
 

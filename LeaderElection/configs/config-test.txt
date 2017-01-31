@@ -1,89 +1,102 @@
-N 					120
-SEED 				11
-
-LATENCY 			1 #ms
-DELTA 				(LATENCY) * 2 #ms
-SCOPE 				200 #m
-DIMX 				2000 #m
-DIMY 				2000 #m
-MAXSPEED 			3 #m/s
-MINSPEED 			1 #m/s
-TIMEPAUSE 			10000 #ms
-
-ENDTIME 			60000 * 10 #ms
-
-TIME_SLOW_MONITOR 	33
-STEP_MONITOR 		33
-
-TIME_SLOW_ELECTION 	0
-STEP_ELECTION 		1
+SEED 				  1111
 
 
-####################################################
 
-simulation.endtime ENDTIME
-random.seed SEED
+N 					  40              # number of nodes
 
-network.size N
+LATENCY 			1               # communication latency in ms
 
-protocol.positionprotocol 						PositionProtocolImpl
+DELTA 				(LATENCY) * 2   # timeout for waiting a message in ms
+                              # should not be lower than LATENCY * 2
+
+SCOPE 				100             # scope of communication in m
+DIMX 				  1000            # size of surface in m
+DIMY 			  	1000            # size of surface in m
+MINSPEED 			50              # minimum speed in m/s
+MAXSPEED 		  100             # maximum speed in m/s
+TIMEPAUSE 	  10000           # maximum time pause ms
+
+ENDTIME 			20000           # simulation time in ms
+
+
+TIME_SLOW_ELECTION 	  1       # time slow of protocol Election.
+                              # can be set at 0 but you must disable Monitor
+                              # if you want to check performances
+
+STEP_ELECTION 	      1       # should not be modify
+
+
+
+TIME_SLOW_MONITOR     33      # should not be modify
+STEP_MONITOR 		      1       # should not be modify
+
+
+################################################################################
+################################################################################
+                  NEXT LINES SHOULD NOT BE MODIFY
+################################################################################
+################################################################################
+
+simulation.endtime                      ENDTIME
+random.seed                             SEED
+
+network.size                            N
+
+protocol.positionprotocol 						  PositionProtocolImpl
 protocol.positionprotocol.maxX 					DIMX
 protocol.positionprotocol.maxY 					DIMY
-protocol.positionprotocol.maxSpeed 				MAXSPEED
-protocol.positionprotocol.minSpeed 				MINSPEED
-protocol.positionprotocol.timePause 			TIMEPAUSE
+protocol.positionprotocol.maxSpeed 			MAXSPEED
+protocol.positionprotocol.minSpeed 			MINSPEED
+protocol.positionprotocol.timePause 		TIMEPAUSE
 
 
-protocol.emitter 								EmitterImpl
-protocol.emitter.scope 							SCOPE
-protocol.emitter.latency 						LATENCY
-protocol.emitter.electionprotocol 				electionprotocol
-protocol.emitter.positionprotocol 				positionprotocol
+protocol.emitter 								        EmitterImpl
+protocol.emitter.scope 							    SCOPE
+protocol.emitter.latency 					    	LATENCY
+protocol.emitter.electionprotocol 			electionprotocol
+protocol.emitter.positionprotocol 			positionprotocol
 
 
-protocol.electionprotocol 						ElectionProtocolImpl
-protocol.electionprotocol.position 				positionprotocol
-protocol.electionprotocol.emitter 				emitter
+protocol.electionprotocol 						  ElectionProtocolImpl
+protocol.electionprotocol.position 			positionprotocol
+protocol.electionprotocol.emitter 			emitter
 protocol.electionprotocol.delta 				DELTA
 
 
 
-################################### CONTROL #####
+################################### CONTROL MONITOR
+control.monitor 								      Monitor
+control.monitor.from 							    0
+control.monitor.until 							  ENDTIME
+control.monitor.step 							    STEP_MONITOR * TIME_SLOW_MONITOR
+control.monitor.positionprotocol 			positionprotocol
+control.monitor.emitter 						  emitter
+control.monitor.electionprotocol 			electionprotocol
+control.monitor.time_slow 					  TIME_SLOW_MONITOR
 
-#control.monitor 								Monitor
-#control.monitor.from 							0
-#control.monitor.until 							ENDTIME
-#control.monitor.step 							STEP_MONITOR * TIME_SLOW_MONITOR
-#control.monitor.positionprotocol 				positionprotocol
-#control.monitor.emitter 						emitter
-#control.monitor.electionprotocol 				electionprotocol
-#control.monitor.time_slow 						TIME_SLOW_MONITOR
 
-
-control.controlElection 						ControlElection
-control.controlElection.from 					0
-control.controlElection.until					ENDTIME
-control.controlElection.step 					STEP_ELECTION
-control.controlElection.electionprotocol 		electionprotocol
+################################### CONTROL ELECTION
+control.controlElection 						      ControlElection
+control.controlElection.from 					    0
+control.controlElection.until					    ENDTIME
+control.controlElection.step 					    STEP_ELECTION
+control.controlElection.electionprotocol	electionprotocol
 control.controlElection.time_slow 				TIME_SLOW_ELECTION
 
 
+################################### CONTROL PERFORMANCE
+protocol.perf 									      PerformanceProtocol
+protocol.perf.electionprotocol 				electionprotocol
 
-################################### PERFORMANCE #####
-
-protocol.perf 									PerformanceProtocol
-protocol.perf.electionprotocol 					electionprotocol
-
-
-control.controlperf 							ControlPerf
-control.controlperf.perfprotocol 				perf
-control.controlperf.from 						0
+control.controlperf 						    	ControlPerf
+control.controlperf.perfprotocol 			perf
+control.controlperf.from 					  	0
 control.controlperf.until 						ENDTIME
-control.controlperf.step 						1
-control.controlperf.time_slow 					TIME_SLOW_ELECTION
+control.controlperf.step 						  1
+control.controlperf.time_slow 				TIME_SLOW_ELECTION
 
 
-control.endcontroler 							EndController
-control.endcontroler.perfprotocol 				perf
-control.endcontroler.at 						-1
+control.endcontroler 							    EndController
+control.endcontroler.perfprotocol 		perf
+control.endcontroler.at 					  	-1
 control.endcontroler.FINAL

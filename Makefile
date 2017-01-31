@@ -2,16 +2,18 @@ JAVAC=javac
 JAVA=java
 JAR=jar
 
-LIB_DIR=~/Work/M2/ARAProjet/LeaderElection/lib
-LIBS=`find $(LIB_DIR) -name '*.jar'`
+ROOT=$(shell pwd)
+CONFIG_FILE=$(ROOT)/LeaderElection/configs/config-test.txt
+
+LIB_DIR=$(ROOT)/LeaderElection/lib
 CLASSPATH=-cp $(C_DIR)
 
-SRC_DIR=~/Work/M2/ARAProjet/LeaderElection/src
+SRC_DIR=$(ROOT)/LeaderElection/src
 MANIFEST_DIR=$(SRC_DIR)/META-INF
 MANIFEST=$(MANIFEST_DIR)/MANIFEST.MF
 SRCS=*.java
 OBJS=$(SRCS:.java=.class)
-C_DIR=~/Work/M2/ARAProjet/obj
+C_DIR=$(ROOT)/obj
 
 OUTPUT_JAR=ElectionLeader.jar
 
@@ -44,4 +46,4 @@ clean:
 	@find . -name $(OUTPUT_JAR) -delete -print
 
 run:
-	java -jar $(OUTPUT_JAR) LeaderElection/configs/config-test.txt
+	java -jar $(OUTPUT_JAR) $(CONFIG_FILE) 
